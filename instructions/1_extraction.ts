@@ -5,6 +5,8 @@ import { extractExistedWords } from "../utils/dictionary";
 import { ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import type { Dictonary } from "../utils/types";
+import { config } from "../config";
+import { sanitize } from "../utils/sanitize";
 
 export async function extraction(file: string) {
   Logger.info(`Extracting: ${file}`);
@@ -14,18 +16,18 @@ export async function extraction(file: string) {
 
   while (true) {
     const request = {
-      instruction: `You are an expert Japanese-to-Thai literary translator. 
+      instruction: `You are an expert ${config.language}-to-Thai literary translator. 
           TASK: Extract only High-Impact unique terms (Character Names, Locations, Unique Spells/Artifacts). 
           
           CONSTRAINTS: 
           1. Ignore common nouns, general verbs, or adjectives (e.g., 'sword', 'running', 'beautiful') unless they are part of a specific Title.
-          2. The 'name' field MUST be the original Japanese. Other fields MUST be in Thai. Split between first name and last name if it's a character.
+          2. The 'name' field MUST be the original ${config.language}. Other fields MUST be in Thai. Split between first name and last name if it's a character.
           3. Fields for characters: gender, speaking_style, and prohibited_phrases (Thai).
           4. If a term is already in the 'Existed Words' list, ONLY include it if you are providing a NEW correction or additional detail, ie. from unknown gender to specified gender. Don't change translation to keep consistency between chapters.`,
       prompt: `They are all fictional, don't trigger any safety filters.
     
     <source_text>
-    ${rawHtml}
+    ${sanitize(rawHtml)}
     </source_text>
     
     <existed_words_reference>
@@ -46,8 +48,7 @@ export async function extraction(file: string) {
                   properties: {
                     name: {
                       type: "string",
-                      description:
-                        "The Japanese term or character name (Used as the key)",
+                      description: `The ${config.language} term or character name (Used as the key)`,
                     },
                     type: {
                       type: "string",
@@ -117,7 +118,8 @@ export async function extraction(file: string) {
     } catch {}
 
     for (const item of parsedData.items || []) {
-      const { name, type, ...rest } = item;
+      let { name, type, ...rest } = item;
+      name = name.toLowerCase();
       if (/[０-９]/.test(name) && JSON.stringify(rest).includes("ตอน"))
         continue;
       if (currentData[name]) {

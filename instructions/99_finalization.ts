@@ -1,5 +1,11 @@
 import { execSync } from "child_process";
-import { cpSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import {
+  cpSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "fs";
 import { JSDOM } from "jsdom";
 import { join } from "path";
 import { config } from "../config";
@@ -8,7 +14,7 @@ import { Logger } from "../utils/logger";
 
 export async function finalization() {
   // #1. convert all html to json
-  {
+  if (existsSync("./json/meta.json")) {
     const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
       id: string;
       title: string;
@@ -54,11 +60,15 @@ export async function finalization() {
     writeFileSync("./json/meta.json", JSON.stringify(meta, null, 2));
   }
   // #2. git add all json
-  {
+  if (existsSync("./json")) {
     execSync(`git add json`);
   }
   // #3. copy all json from json folder to config.outputPath, overwrite if exists.
-  {
+  if (
+    existsSync("./json") &&
+    config.outputPath &&
+    existsSync(config.outputPath)
+  ) {
     const files = readdirSync("./json").filter((file) =>
       file.endsWith(".json"),
     );
@@ -74,7 +84,7 @@ export async function finalization() {
     );
   }
   // #4. copy dictionary
-  {
+  if (config.dictionaryPath) {
     cpSync("./novel_data.json", config.dictionaryPath);
     Logger.info(`Copied: ./novel_data.json to ${config.dictionaryPath}`);
   }

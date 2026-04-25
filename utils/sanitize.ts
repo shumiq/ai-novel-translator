@@ -1,12 +1,12 @@
 import { readFileSync, writeFileSync } from "fs";
 import { JSDOM } from "jsdom";
-import { isThai } from "./lang";
 import { Logger } from "./logger";
 
 export const sanitizeFile = (filePath: string): boolean => {
   if (!filePath.endsWith("html")) return false;
   const rawHTML = readFileSync(filePath, "utf-8");
-  if (!isThai(rawHTML)) return false;
+  const sanitized = sanitize(rawHTML);
+  if (!sanitized.trim()) return false;
   writeFileSync(filePath, sanitize(rawHTML));
   return true;
 };

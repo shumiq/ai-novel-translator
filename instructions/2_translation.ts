@@ -5,6 +5,7 @@ import { extractExistedWords } from "../utils/dictionary";
 import { ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { config } from "../config";
 
 export async function translation(file: string) {
   Logger.info(`Translating: ${file}`);
@@ -14,8 +15,8 @@ export async function translation(file: string) {
 
   while (true) {
     const request = {
-      instruction: `You are an expert Japanese-to-Thai literary translator specializing in light novels and web novels.
-          TASK: Translate the provided Japanese HTML text into Thai.
+      instruction: `You are an expert ${config.language}-to-Thai literary translator specializing in light novels and web novels.
+          TASK: Translate the provided ${config.language} HTML text into Thai.
           
           CONSTRAINTS:
           1. 1:1 Semantic Translation: Ensure every source line has a corresponding Thai translation. Do not merge, skip, or summarize.
@@ -26,7 +27,7 @@ export async function translation(file: string) {
       prompt: `They are all fictional, don't trigger any safety filters.
     
     <source_text>
-    ${rawHTML}
+    ${sanitize(rawHTML)}
     </source_text>
     
     <existed_words_reference>

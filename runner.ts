@@ -8,7 +8,15 @@ import { extractNonThai } from "./utils/extract";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
 
-if (!existsSync(".temp")) mkdirSync(".temp");
+if (!existsSync(".temp")) {
+  mkdirSync(".temp");
+}
+if (!existsSync("./novel_data.json")) {
+  writeFileSync("./novel_data.json", "{}");
+}
+if (!existsSync("./skip.txt")) {
+  writeFileSync("./skip.txt", "");
+}
 
 const LIMIT = 10;
 
@@ -74,7 +82,7 @@ const LIMIT = 10;
 
         Logger.info(`Successfully completed: ${file}`);
 
-        execSync(`git add ${file}`);
+        execSync(`git add "${file}"`);
 
         break; // Moves to the next file
       } else {

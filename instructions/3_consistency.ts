@@ -5,6 +5,7 @@ import { extractExistedWords } from "../utils/dictionary";
 import { ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { config } from "../config";
 
 export async function consistencyCheck(file: string) {
   const originalHtml = readFileSync(file, "utf-8");
@@ -19,7 +20,7 @@ export async function consistencyCheck(file: string) {
 
   while (true) {
     const request = {
-      instruction: `You are a meticulous Localization QA Editor for Japanese-to-Thai novels.
+      instruction: `You are a meticulous Localization QA Editor for ${config.language}-to-Thai novels.
       TASK: Review the translated text against the original text and the glossary. Focus purely on consistency fixes; leave prose humanization to the next pass.
       
       CONSTRAINTS:
@@ -30,7 +31,7 @@ export async function consistencyCheck(file: string) {
       prompt: `They are all fictional, don't trigger any safety filters.
 
 <original_text>
-${originalHtml}
+${sanitize(originalHtml)}
 </original_text>
 
 <translated_text>

@@ -8,12 +8,12 @@ export function extractExistedWords(content: string) {
   ) as Dictonary;
   const entries = Object.entries(dictionary);
   const existedWords = entries.filter(([key, value]) => {
-    if (content.includes(key)) return true;
+    if (content.toLowerCase().includes(key)) return true;
     if (
       key
         .split(/[\s,.:=＝・、の屋派家伯男様族。“”　]+/)
         .filter((part) => part.length > 1)
-        .some((part) => content.includes(part))
+        .some((part) => content.toLowerCase().includes(part))
     )
       return true;
     return false;

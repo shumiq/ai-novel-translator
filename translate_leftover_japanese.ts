@@ -13,18 +13,20 @@ function getJapaneseLines(text: string) {
 }
 
 const files = extractThai();
+const toBeTranslated: string[] = [];
 
 for (const file of files) {
-  while (true) {
-    const content = readFileSync(file, "utf-8");
-    const japaneseLines = getJapaneseLines(content);
-    if (japaneseLines.length === 0) break;
-    const prompt = `Translate leftover japanese text of the file @${file} to thai at lines ${japaneseLines.join(", ")}. Only using internel read/write tools in Windows environment. Don't write any code.`;
-    Logger.info(prompt);
-    execSync(`gemini --yolo --prompt "${prompt}" --model ${config.model}`, {
-      stdio: "inherit",
-      timeout: 1000 * 60 * 10,
-      killSignal: "SIGKILL",
-    });
-  }
+  const content = readFileSync(file, "utf-8");
+  const japaneseLines = getJapaneseLines(content);
+  if (japaneseLines.length === 0) continue;
+  toBeTranslated.push(` - ${file} at line: ${japaneseLines.join(", ")}`)
 }
+
+if(toBeTranslated.length === 0) {
+  Logger.info(`No leftover Japanese text found.`)
+  process.exit(0)
+}
+
+console.log(`Translate leftover japanese text of below files:`)
+console.log(toBeTranslated.join("\n"))
+console.log(`Don't write any code. Only edit specify lines.`)
