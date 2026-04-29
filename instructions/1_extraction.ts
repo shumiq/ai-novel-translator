@@ -8,7 +8,7 @@ import {
 } from "fs";
 import { aiRequest } from "../utils/ai";
 import { extractExistedWords } from "../utils/dictionary";
-import { ProhibitedContentError } from "../utils/gemini";
+import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import type { Dictonary } from "../utils/types";
 import { config } from "../config";
@@ -107,10 +107,15 @@ export async function extraction(file: string) {
             `Prohibited content detected in file ${file}. Skipping this file.`,
           );
           appendFileSync("skip.txt", `${file}\n`);
+        } else if (e instanceof HighDemandError) {
+          Logger.warn(
+            `High demand detected in file ${file}. Skipping this file.`,
+          );
+          appendFileSync("skip.txt", `${file}\n`);
         } else {
           Logger.error(e);
         }
-        process.exit(1);
+        throw e;
       });
 
       try {
@@ -174,7 +179,7 @@ export async function extraction(file: string) {
 
     execSync(`git add novel_data.json`);
 
-    writeFileSync(`.temp/extraction_${file.replaceAll("/", "_")}`, "success");
+    writeFileSync(`.temp/extraction_${file.replaceAll("/", "_")}`, response);
     rmSync(`.temp/request_extraction_${file.replaceAll("/", "_")}.json`);
     rmSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`);
     break;

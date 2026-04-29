@@ -2,7 +2,7 @@ import { appendFileSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { aiRequest } from "../utils/ai";
 import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
-import { ProhibitedContentError } from "../utils/gemini";
+import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 import { config } from "../config";
@@ -52,10 +52,15 @@ export async function translation(file: string) {
           `Prohibited content detected in file ${file}. Skipping this file.`,
         );
         appendFileSync("skip.txt", `${file}\n`);
+      } else if (e instanceof HighDemandError) {
+        Logger.warn(
+          `High demand detected in file ${file}. Skipping this file.`,
+        );
+        appendFileSync("skip.txt", `${file}\n`);
       } else {
         Logger.error(e);
       }
-      process.exit(1);
+      throw e;
     });
 
     const translatedHtml = sanitize(response);

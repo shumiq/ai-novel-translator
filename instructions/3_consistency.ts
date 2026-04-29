@@ -1,12 +1,12 @@
 import { appendFileSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { config } from "../config";
 import { aiRequest } from "../utils/ai";
 import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
-import { ProhibitedContentError } from "../utils/gemini";
+import { getPreviousChapterContent } from "../utils/extract";
+import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import { config } from "../config";
-import { getPreviousChapterContent } from "../utils/extract";
 
 export async function consistencyCheck(file: string) {
   const originalHtml = readFileSync(file, "utf-8");
@@ -60,10 +60,15 @@ Instruction: Perform a consistency fix on the <translated_text> based on the ref
           `Prohibited content detected in file ${file}. Skipping this file.`,
         );
         appendFileSync("skip.txt", `${file}\n`);
+      } else if (e instanceof HighDemandError) {
+        Logger.warn(
+          `High demand detected in file ${file}. Skipping this file.`,
+        );
+        appendFileSync("skip.txt", `${file}\n`);
       } else {
         Logger.error(e);
       }
-      process.exit(1);
+      throw e;
     });
 
     const consistencyCheckedHtml = sanitize(response);

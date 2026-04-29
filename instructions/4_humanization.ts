@@ -3,10 +3,10 @@ import { config } from "../config";
 import { aiRequest } from "../utils/ai";
 import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
-import { ProhibitedContentError } from "../utils/gemini";
+import { getPreviousChapterContent } from "../utils/extract";
+import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import { getPreviousChapterContent } from "../utils/extract";
 
 export async function humanization(file: string) {
   const originalHtml = readFileSync(file, "utf-8");
@@ -62,10 +62,15 @@ Instruction: Rewrite and humanize the <translated_text> for superior Thai litera
           `Prohibited content detected in file ${file}. Skipping this file.`,
         );
         appendFileSync("skip.txt", `${file}\n`);
+      } else if (e instanceof HighDemandError) {
+        Logger.warn(
+          `High demand detected in file ${file}. Skipping this file.`,
+        );
+        appendFileSync("skip.txt", `${file}\n`);
       } else {
         Logger.error(e);
       }
-      process.exit(1);
+      throw e;
     });
 
     const humanizedHtml = sanitize(response);

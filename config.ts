@@ -8,6 +8,8 @@ export const config = {
   apiKeys: [],
   language: "Japanese",
   skipProhibitedContent: true,
+  skipHighDemand: true,
+  loopSkip: true,
   thinking: "medium",
   debug: false,
 };

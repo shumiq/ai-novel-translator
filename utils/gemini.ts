@@ -111,6 +111,9 @@ export async function geminiRequest({
       const errorText = await response.text();
       Logger.error(`API Error: ${response.status} - ${errorText}`);
       if (response.status == 503) {
+        if (config.skipHighDemand) {
+          throw new HighDemandError();
+        }
         retryCount = Math.min(retryCount * 2, 120); // Cap retry count to avoid excessively long waits
         Logger.error(`Retrying after ${retryCount * 5} seconds...`);
         await new Promise((res) => setTimeout(res, retryCount * 5000));
@@ -216,5 +219,12 @@ export class ProhibitedContentError extends Error {
   constructor() {
     super("Prohibited content detected and skipped.");
     this.name = "ProhibitedContentError";
+  }
+}
+
+export class HighDemandError extends Error {
+  constructor() {
+    super("High demand detected and skipped.");
+    this.name = "HighDemandError";
   }
 }
