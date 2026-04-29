@@ -107,8 +107,9 @@ const LIMIT = 10;
     }
   }
   if (config.loopSkip) {
-    if (skips.trim() === "") process.exit(0);
+    if (readFileSync("skip.txt", "utf-8").trim() === "") process.exit(0);
     writeFileSync("skip.txt", "");
+    process.exit(1);
   } else {
     process.exit(0);
   }
