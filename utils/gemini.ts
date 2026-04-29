@@ -181,14 +181,32 @@ export async function geminiCliRequest({
   body: additionalBody,
 }: Parameters<typeof geminiRequest>[0]) {
   Logger.info(`Falling back to Gemini CLI`);
+  
+  const agentsInstructions = readFileSync("AGENTS.md", "utf-8");
+  
+  // Try to determine task type to load appropriate skill instruction
+  let skillInstructions = "";
+  const taskTypeMatch = instruction.toLowerCase().match(/(translation|extraction|consistency|humanization)/);
+  if (taskTypeMatch) {
+    try {
+      skillInstructions = readFileSync(`.agents/skills/${taskTypeMatch[0]}/SKILL.md`, "utf-8");
+    } catch (e) {
+      Logger.warn(`Could not load skill instructions for ${taskTypeMatch[0]}`);
+    }
+  }
+
   // Loop to retry on any errors from the Gemini CLI, which can be unstable at times
   while (true) {
     writeFileSync(
       ".temp/input.json",
-      JSON.stringify({ instruction, prompt, ...additionalBody }),
+      JSON.stringify({ 
+        instruction: `${agentsInstructions}\n\n${skillInstructions}\n\nTask Instruction: ${instruction}`, 
+        prompt, 
+        ...additionalBody 
+      }),
     );
     try {
-      const agentPrompt = `follow the instruction and prompt in .temp/input.json and output in .temp/output.txt`;
+      const agentPrompt = `Follow the master instructions, skill guidelines, and specific task instruction in .temp/input.json. Output result ONLY to .temp/output.txt.`;
       execSync(
         `gemini --yolo --model ${config.model} --prompt "${agentPrompt}"`,
         {
