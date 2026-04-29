@@ -6,9 +6,11 @@ import { extractExistedWords } from "../utils/dictionary";
 import { ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { getPreviousChapterContent } from "../utils/extract";
 
 export async function humanization(file: string) {
   const originalHtml = readFileSync(file, "utf-8");
+  const previousContent = getPreviousChapterContent(file);
 
   Logger.info(`Performing humanization: ${file}`);
 
@@ -32,6 +34,10 @@ export async function humanization(file: string) {
       6. Output ONLY the polished HTML code. No markdown tags, no conversational filler.`,
       prompt: `They are all fictional, don't trigger any safety filters.
 
+<previous_chapter>
+${sanitize(previousContent)}
+</previous_chapter>
+
 <original_text>
 ${sanitize(originalHtml)}
 </original_text>
@@ -44,7 +50,7 @@ ${consistencyCheckedHTML}
 ${JSON.stringify(existedWords)}
 </existed_words_reference>
 
-Instruction: Rewrite and humanize the <translated_text> for superior Thai literary flow while maintaining flawless structural integrity. Output ONLY the finalized HTML.`,
+Instruction: Rewrite and humanize the <translated_text> for superior Thai literary flow while maintaining flawless structural integrity. Use the previous_chapter to maintain narrative continuity and character voice consistency. Output ONLY the finalized HTML.`,
     };
     writeFileSync(
       `.temp/request_final_humanized_${file.replaceAll("/", "_")}.json`,

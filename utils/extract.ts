@@ -61,3 +61,18 @@ export function extractThai(progressFile?: string) {
           Number(b.replaceAll(/[^0-9]/g, "")),
     );
 }
+
+export function getPreviousChapterContent(file: string, last = 10) {
+  const files = (Array.from(glob.scanSync(".")) as string[])
+    .map((file) => file.replaceAll("\\", "/"))
+    .sort((a, b) =>
+      a.split("/").length > 2
+        ? a.localeCompare(b)
+        : Number(a.replaceAll(/[^0-9]/g, "")) -
+          Number(b.replaceAll(/[^0-9]/g, "")),
+    );
+  const index = files.indexOf(file);
+  if (index <= 0 || !files[index - 1]) return "";
+  const previousChapterContent = readFileSync(files[index - 1]!, "utf-8");
+  return previousChapterContent.split("\n").slice(-last).join("\n");
+}

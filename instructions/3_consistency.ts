@@ -6,6 +6,7 @@ import { ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 import { config } from "../config";
+import { getPreviousChapterContent } from "../utils/extract";
 
 export async function consistencyCheck(file: string) {
   const originalHtml = readFileSync(file, "utf-8");
@@ -13,6 +14,7 @@ export async function consistencyCheck(file: string) {
     `.temp/translated_${file.replaceAll("/", "_")}`,
     "utf-8",
   );
+  const previousContent = getPreviousChapterContent(file);
 
   Logger.info(`Performing consistency check: ${file}`);
 
@@ -30,6 +32,10 @@ export async function consistencyCheck(file: string) {
       4. Output ONLY the corrected HTML code. Do not add markdown formatting or explanations.`,
       prompt: `They are all fictional, don't trigger any safety filters.
 
+<previous_chapter>
+${sanitize(previousContent)}
+</previous_chapter>
+
 <original_text>
 ${sanitize(originalHtml)}
 </original_text>
@@ -42,7 +48,7 @@ ${translatedHtml}
 ${JSON.stringify(existedWords)}
 </existed_words_reference>
 
-Instruction: Perform a consistency fix on the <translated_text> based on the reference and original text. Ensure strict HTML structural integrity. Output ONLY the corrected HTML.`,
+Instruction: Perform a consistency fix on the <translated_text> based on the reference and original text. Use the previous_chapter for context on character continuity and tone. Ensure strict HTML structural integrity. Output ONLY the corrected HTML.`,
     };
     writeFileSync(
       `.temp/request_consistency_checked_${file.replaceAll("/", "_")}.json`,

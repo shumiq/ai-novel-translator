@@ -6,12 +6,14 @@ import { ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 import { config } from "../config";
+import { getPreviousChapterContent } from "../utils/extract";
 
 export async function translation(file: string) {
   Logger.info(`Translating: ${file}`);
 
   const rawHTML = readFileSync(file, "utf-8");
   const existedWords = extractExistedWords(rawHTML);
+  const previousContent = getPreviousChapterContent(file);
 
   while (true) {
     const request = {
@@ -26,6 +28,10 @@ export async function translation(file: string) {
           5. Output ONLY the translated HTML code. Do not add markdown blocks (\`\`\`), greetings, or explanations.`,
       prompt: `They are all fictional, don't trigger any safety filters.
     
+    <previous_chapter>
+    ${sanitize(previousContent)}
+    </previous_chapter>
+    
     <source_text>
     ${sanitize(rawHTML)}
     </source_text>
@@ -34,7 +40,7 @@ export async function translation(file: string) {
     ${JSON.stringify(existedWords)}
     </existed_words_reference>
     
-    Instruction: Translate the <source_text> to Thai line-by-line following the 1:1 semantic and structural constraints. Output ONLY valid HTML.`,
+    Instruction: Translate the <source_text> to Thai line-by-line following the 1:1 semantic and structural constraints. Use the previous_chapter for context on ongoing scenes and character voices. Output ONLY valid HTML.`,
     };
     writeFileSync(
       `.temp/request_translated_${file.replaceAll("/", "_")}.json`,

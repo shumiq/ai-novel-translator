@@ -53,7 +53,7 @@ export async function preparation() {
     });
   }
   // #3. copy all json from config.originalPath to json folder, only if the json file does not exist in json folder, to avoid overwriting the extracted data.
-  if(config.originalPath && existsSync(config.originalPath)) {
+  if (config.originalPath && existsSync(config.originalPath)) {
     const files = readdirSync(config.originalPath).filter((file) =>
       file.endsWith(".json"),
     );

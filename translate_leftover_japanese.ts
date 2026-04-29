@@ -19,14 +19,14 @@ for (const file of files) {
   const content = readFileSync(file, "utf-8");
   const japaneseLines = getJapaneseLines(content);
   if (japaneseLines.length === 0) continue;
-  toBeTranslated.push(` - ${file} at line: ${japaneseLines.join(", ")}`)
+  toBeTranslated.push(` - ${file} at line: ${japaneseLines.join(", ")}`);
 }
 
-if(toBeTranslated.length === 0) {
-  Logger.info(`No leftover Japanese text found.`)
-  process.exit(0)
+if (toBeTranslated.length === 0) {
+  Logger.info(`No leftover Japanese text found.`);
+  process.exit(0);
 }
 
-console.log(`Translate leftover japanese text of below files:`)
-console.log(toBeTranslated.join("\n"))
-console.log(`Don't write any code. Only edit specify lines.`)
+console.log(`Translate leftover japanese text of below files:`);
+console.log(toBeTranslated.join("\n"));
+console.log(`Don't write any code. Only edit specify lines.`);
