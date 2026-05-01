@@ -30,7 +30,10 @@ const LIMIT = 10;
       Logger.info(`Skipping: ${file}`);
       continue;
     }
-    if (count++ >= LIMIT) process.exit(1);
+    if (count++ >= LIMIT) {
+      if (config.loopSkip) writeFileSync("skip.txt", "");
+      process.exit(1);
+    }
     try {
       // Loop to ensure we only proceed to the next file after successful passes of the current file
       while (true) {

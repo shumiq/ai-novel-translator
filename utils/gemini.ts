@@ -5,7 +5,7 @@ import { Logger } from "./logger";
 
 const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`;
 
-let retryCount = 0.5;
+let retryCount = 0;
 
 function getApiKey() {
   if (config.apiKeys.length === 0) {
@@ -111,12 +111,12 @@ export async function geminiRequest({
       const errorText = await response.text();
       Logger.error(`API Error: ${response.status} - ${errorText}`);
       if (response.status == 503) {
-        if (config.skipHighDemand) {
+        if (retryCount > 5 && config.skipHighDemand) {
           throw new HighDemandError();
         }
-        retryCount = Math.min(retryCount * 2, 120); // Cap retry count to avoid excessively long waits
-        Logger.error(`Retrying after ${retryCount * 5} seconds...`);
-        await new Promise((res) => setTimeout(res, retryCount * 5000));
+        retryCount++;
+        Logger.error(`Retrying after 5 seconds...`);
+        await new Promise((res) => setTimeout(res, 5000));
         continue;
       }
       if (response.status == 429) {
@@ -181,15 +181,20 @@ export async function geminiCliRequest({
   body: additionalBody,
 }: Parameters<typeof geminiRequest>[0]) {
   Logger.info(`Falling back to Gemini CLI`);
-  
+
   const agentsInstructions = readFileSync("AGENTS.md", "utf-8");
-  
+
   // Try to determine task type to load appropriate skill instruction
   let skillInstructions = "";
-  const taskTypeMatch = instruction.toLowerCase().match(/(translation|extraction|consistency|humanization)/);
+  const taskTypeMatch = instruction
+    .toLowerCase()
+    .match(/(translation|extraction|consistency|humanization)/);
   if (taskTypeMatch) {
     try {
-      skillInstructions = readFileSync(`.agents/skills/${taskTypeMatch[0]}/SKILL.md`, "utf-8");
+      skillInstructions = readFileSync(
+        `.agents/skills/${taskTypeMatch[0]}/SKILL.md`,
+        "utf-8",
+      );
     } catch (e) {
       Logger.warn(`Could not load skill instructions for ${taskTypeMatch[0]}`);
     }
@@ -199,10 +204,10 @@ export async function geminiCliRequest({
   while (true) {
     writeFileSync(
       ".temp/input.json",
-      JSON.stringify({ 
-        instruction: `${agentsInstructions}\n\n${skillInstructions}\n\nTask Instruction: ${instruction}`, 
-        prompt, 
-        ...additionalBody 
+      JSON.stringify({
+        instruction: `${agentsInstructions}\n\n${skillInstructions}\n\nTask Instruction: ${instruction}`,
+        prompt,
+        ...additionalBody,
       }),
     );
     try {
