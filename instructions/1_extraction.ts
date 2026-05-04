@@ -180,8 +180,13 @@ export async function extraction(file: string) {
     execSync(`git add novel_data.json`);
 
     writeFileSync(`.temp/extraction_${file.replaceAll("/", "_")}`, response);
-    rmSync(`.temp/request_extraction_${file.replaceAll("/", "_")}.json`);
-    rmSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`);
+
+    if (
+      existsSync(`.temp/request_extraction_${file.replaceAll("/", "_")}.json`)
+    )
+      rmSync(`.temp/request_extraction_${file.replaceAll("/", "_")}.json`);
+    if (existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`))
+      rmSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`);
     break;
   }
 }

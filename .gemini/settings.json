@@ -1,5 +1,41 @@
 {
   "context": {
-    "fileName": [".temp/AGENTS.md"]
+    "fileName": [
+      ".temp/AGENTS.md",
+      ".temp/PROMPT.md"
+    ]
+  },
+  "experimental": {
+    "contextManagement": true,
+    "generalistProfile": true,
+    "autoMemory": true
+  },
+  "security": {
+    "autoAddToPolicyByDefault": true,
+    "enablePermanentToolApproval": true
+  },
+  "tools": {
+    "disableLLMCorrection": false,
+    "shell": {
+      "enableInteractiveShell": false
+    }
+  },
+  "model": {
+    "disableLoopDetection": false
+  },
+  "ui": {
+    "showModelInfoInChat": true,
+    "showCitations": true,
+    "showMemoryUsage": true,
+    "hideFooter": true,
+    "footer": {
+      "hideContextPercentage": false
+    },
+    "hideBanner": true,
+    "inlineThinkingMode": "full",
+    "showStatusInTitle": true
+  },
+  "general": {
+    "enableNotifications": true
   }
 }

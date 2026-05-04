@@ -203,7 +203,8 @@ export async function geminiCliRequest({
   while (true) {
     try {
       execSync(
-        `gemini --yolo --model ${config.model} --prompt "Follow instruction in .temp/PROMPT.md"`,
+        // `gemini --yolo --model ${config.model} --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save output in .temp/output.txt"`,
+        `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save output in .temp/output.txt" --model google/${config.model} --agent translate --thinking true -- --variant med`,
         {
           stdio: "inherit",
           timeout: 1000 * 60 * 10,
