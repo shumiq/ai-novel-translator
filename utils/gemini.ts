@@ -180,40 +180,30 @@ export async function geminiCliRequest({
   prompt,
   body: additionalBody,
 }: Parameters<typeof geminiRequest>[0]) {
-  Logger.info(`Falling back to Gemini CLI`);
-
-  const agentsInstructions = readFileSync("AGENTS.md", "utf-8");
-
-  // Try to determine task type to load appropriate skill instruction
-  let skillInstructions = "";
-  const taskTypeMatch = instruction
-    .toLowerCase()
-    .match(/(translation|extraction|consistency|humanization)/);
-  if (taskTypeMatch) {
-    try {
-      skillInstructions = readFileSync(
-        `.agents/skills/${taskTypeMatch[0]}/SKILL.md`,
-        "utf-8",
-      );
-    } catch (e) {
-      Logger.warn(`Could not load skill instructions for ${taskTypeMatch[0]}`);
-    }
-  }
-
-  // Loop to retry on any errors from the Gemini CLI, which can be unstable at times
+  writeFileSync(
+    ".temp/AGENTS.md",
+    [
+      ...instruction.split("\n").map((line) => line.trim()),
+      "",
+      "Save output to .temp/output.txt",
+    ].join("\n"),
+  );
+  writeFileSync(
+    ".temp/PROMPT.md",
+    [
+      ...prompt.split("\n").map((line) => line.trim()),
+      "",
+      additionalBody
+        ? `<reponse_format>\n${JSON.stringify(additionalBody, null, 2)}\n</reponse_format>`
+        : "Output must be in HTML format with SAME number of lines as <original_text>",
+      "",
+      "Save output to .temp/output.txt",
+    ].join("\n"),
+  );
   while (true) {
-    writeFileSync(
-      ".temp/input.json",
-      JSON.stringify({
-        instruction: `${agentsInstructions}\n\n${skillInstructions}\n\nTask Instruction: ${instruction}`,
-        prompt,
-        ...additionalBody,
-      }),
-    );
     try {
-      const agentPrompt = `Follow the master instructions, skill guidelines, and specific task instruction in .temp/input.json. Output result ONLY to .temp/output.txt.`;
       execSync(
-        `gemini --yolo --model ${config.model} --prompt "${agentPrompt}"`,
+        `gemini --yolo --model ${config.model} --prompt "Follow instruction in .temp/PROMPT.md"`,
         {
           stdio: "inherit",
           timeout: 1000 * 60 * 10,
@@ -232,7 +222,8 @@ export async function geminiCliRequest({
       );
       continue;
     }
-    rmSync(".temp/input.json");
+    rmSync(".temp/AGENTS.md");
+    rmSync(".temp/PROMPT.md");
     rmSync(".temp/output.txt");
     return output;
   }

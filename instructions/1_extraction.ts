@@ -39,15 +39,15 @@ export async function extraction(file: string) {
     ${sanitize(previousContent)}
     </previous_chapter>
     
-    <source_text>
+    <original_text>
     ${sanitize(rawHtml)}
-    </source_text>
+    </original_text>
     
     <existed_words_reference>
     ${JSON.stringify(existedWords)}
     </existed_words_reference>
     
-    Instruction: Extract ONLY new or updated high-impact terms from the source_text above. Use the previous_chapter for context on recurring characters and terms. Do not extract common dictionary words or chapter titles. Output in JSON.`,
+    Instruction: Extract ONLY new or updated high-impact terms from the original_text above. Use the previous_chapter for context on recurring characters and terms. Do not extract common dictionary words or chapter titles. Output in JSON.`,
         body: {
           generationConfig: {
             responseMimeType: "application/json",

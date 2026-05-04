@@ -32,15 +32,15 @@ export async function translation(file: string) {
     ${sanitize(previousContent)}
     </previous_chapter>
     
-    <source_text>
+    <original_text>
     ${sanitize(rawHTML)}
-    </source_text>
+    </original_text>
     
     <existed_words_reference>
     ${JSON.stringify(existedWords)}
     </existed_words_reference>
     
-    Instruction: Translate the <source_text> to Thai line-by-line following the 1:1 semantic and structural constraints. Use the previous_chapter for context on ongoing scenes and character voices. Output ONLY valid HTML.`,
+    Instruction: Translate the <original_text> to Thai line-by-line following the 1:1 semantic and structural constraints. Use the previous_chapter for context on ongoing scenes and character voices. Output ONLY valid HTML.`,
     };
     writeFileSync(
       `.temp/request_translated_${file.replaceAll("/", "_")}.json`,

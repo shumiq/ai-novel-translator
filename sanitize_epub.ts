@@ -8,5 +8,5 @@ const files = Array.from(glob.scanSync(".")) as string[];
 Logger.info(`Sanitizing ${files.length} files...`);
 files.toSorted().forEach((file) => {
   Logger.progress(`Processing ${file}`);
-  sanitizeFile(file, { onlyThai: true });
+  sanitizeFile(file, { noReplace: true });
 });

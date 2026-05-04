@@ -11,5 +11,6 @@ export const config = {
   skipHighDemand: true,
   loopSkip: true,
   thinking: "medium",
+  runner: "api",
   debug: false,
 };
