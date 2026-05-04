@@ -1,4 +1,10 @@
-import { appendFileSync, readFileSync, rmSync, writeFileSync } from "fs";
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
 import { config } from "../config";
 import { aiRequest } from "../utils/ai";
 import { countLines } from "../utils/count_line";
@@ -8,12 +14,17 @@ import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 
+const getSourceFile = (file: string) => {
+  const files = [`.temp/translated_${file.replaceAll("/", "_")}`, file];
+  for (const file of files) {
+    if (existsSync(file)) return file;
+  }
+  return file;
+};
+
 export async function consistencyCheck(file: string) {
   const originalHtml = readFileSync(file, "utf-8");
-  const translatedHtml = readFileSync(
-    `.temp/translated_${file.replaceAll("/", "_")}`,
-    "utf-8",
-  );
+  const translatedHtml = readFileSync(getSourceFile(file), "utf-8");
   const previousContent = getPreviousChapterContent(file);
 
   Logger.info(`Performing consistency check: ${file}`);

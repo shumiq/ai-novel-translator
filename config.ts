@@ -7,10 +7,11 @@ export const config = {
   model: "gemini-3.1-flash-lite-preview",
   apiKeys: [],
   language: "Japanese",
+  runner: "api",
+  pipeline: ["extraction", "translation", "consistency", "humanization"],
   skipProhibitedContent: true,
   skipHighDemand: true,
   loopSkip: true,
   thinking: "medium",
-  runner: "api",
   debug: false,
 };

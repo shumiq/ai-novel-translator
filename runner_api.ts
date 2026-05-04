@@ -9,6 +9,19 @@ import { extractNonThai } from "./utils/extract";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
 
+const getFinalFile = (file: string) => {
+  const files = [
+    `.temp/final_humanized_${file.replaceAll("/", "_")}`,
+    `.temp/consistency_checked_${file.replaceAll("/", "_")}`,
+    `.temp/translated_${file.replaceAll("/", "_")}`,
+    file,
+  ];
+  for (const file of files) {
+    if (existsSync(file)) return file;
+  }
+  return file;
+};
+
 export const runnerAPI = async () => {
   const files = extractNonThai();
   const skips = readFileSync("skip.txt", "utf-8");
@@ -27,13 +40,16 @@ export const runnerAPI = async () => {
       // Loop to ensure we only proceed to the next file after successful passes of the current file
       while (true) {
         // PASS-1: Extract high-impact terms using the API and update the dictionary
-        if (!existsSync(`.temp/extraction_${file.replaceAll("/", "_")}`)) {
+        if (
+          config.pipeline.includes("extraction") &&
+          !existsSync(`.temp/extraction_${file.replaceAll("/", "_")}`)
+        ) {
           await extraction(file);
         }
 
         // PASS-2: Translate the extracted terms using the API and update the dictionary with translations
         if (
-          existsSync(`.temp/extraction_${file.replaceAll("/", "_")}`) &&
+          config.pipeline.includes("translation") &&
           !existsSync(`.temp/translated_${file.replaceAll("/", "_")}`)
         ) {
           await translation(file);
@@ -41,21 +57,19 @@ export const runnerAPI = async () => {
 
         // PASS-3: Consistency check - Ensure the translated file has matched translated terms from the dictionary.
         if (
-          existsSync(`.temp/translated_${file.replaceAll("/", "_")}`) &&
+          config.pipeline.includes("consistency") &&
           !existsSync(`.temp/consistency_checked_${file.replaceAll("/", "_")}`)
         ) {
           await consistencyCheck(file);
         }
 
         // PASS-4: Humanize the translated text
-        if (
-          existsSync(`.temp/consistency_checked_${file.replaceAll("/", "_")}`)
-        ) {
+        if (config.pipeline.includes("humanization")) {
           await humanization(file);
         }
 
         // Final check to ensure the output file is in Thai before proceeding to the next file
-        const finalOutputFile = `.temp/final_humanized_${file.replaceAll("/", "_")}`;
+        const finalOutputFile = getFinalFile(file);
 
         if (
           existsSync(finalOutputFile) &&
