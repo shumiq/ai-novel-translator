@@ -111,8 +111,14 @@ export async function geminiRequest({
       const errorText = await response.text();
       Logger.error(`API Error: ${response.status} - ${errorText}`);
       if (response.status == 503) {
-        if (retryCount > 5 && config.skipHighDemand) {
-          throw new HighDemandError();
+        if (retryCount > 5) {
+          retryCount = 0;
+          if (config.skipHighDemand) throw new HighDemandError();
+          return geminiCliRequest({
+            instruction,
+            prompt,
+            body: additionalBody,
+          });
         }
         retryCount++;
         Logger.error(`Retrying after 5 seconds...`);
@@ -183,39 +189,36 @@ export async function geminiCliRequest({
   writeFileSync(
     ".temp/AGENTS.md",
     [
-      ...instruction.split("\n").map((line) => line.trim()),
+      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. ",
       "",
-      "Save output to .temp/output.txt",
+      ...instruction.split("\n").map((line) => line.trim()),
     ].join("\n"),
   );
   writeFileSync(
     ".temp/PROMPT.md",
     [
+      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. ",
+      "",
       ...prompt.split("\n").map((line) => line.trim()),
       "",
       additionalBody
         ? `<reponse_format>\n${JSON.stringify(additionalBody, null, 2)}\n</reponse_format>`
         : "Output must be in HTML format with SAME number of lines as <original_text>",
-      "",
-      "Save output to .temp/output.txt",
     ].join("\n"),
   );
+  writeFileSync(".temp/output.txt", "");
   while (true) {
     try {
       execSync(
         // `gemini --yolo --model ${config.model} --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save output in .temp/output.txt"`,
-        `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save output in .temp/output.txt" --model google/${config.model} --agent translate --thinking true -- --variant med`,
+        `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt" --model google/${config.model} --agent translate --thinking true -- --variant med`,
         {
           stdio: "inherit",
-          timeout: 1000 * 60 * 10,
+          // timeout: 1000 * 60 * 10,
           killSignal: "SIGKILL",
         },
       );
     } catch {}
-    if (!existsSync(".temp/output.txt")) {
-      Logger.error(`Gemini CLI timed out. Retrying Gemini CLI request...`);
-      continue;
-    }
     const output = readFileSync(".temp/output.txt", "utf-8");
     if (!output) {
       Logger.error(

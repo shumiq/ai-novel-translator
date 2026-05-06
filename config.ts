@@ -9,9 +9,10 @@ export const config = {
   language: "Japanese",
   runner: "api",
   pipeline: ["extraction", "translation", "consistency", "humanization"],
-  skipProhibitedContent: true,
-  skipHighDemand: true,
+  skipProhibitedContent: false,
+  skipHighDemand: false,
   loopSkip: true,
+  chunkSize: 200,
   thinking: "medium",
   debug: false,
 };
