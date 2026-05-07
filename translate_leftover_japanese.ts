@@ -27,6 +27,6 @@ if (toBeTranslated.length === 0) {
   process.exit(0);
 }
 
-console.log(`Translate leftover japanese text of below files:`);
+console.log(`Translate leftover japanese text of below files into Thai:`);
 console.log(toBeTranslated.join("\n"));
 console.log(`Don't write any code. Only edit specify lines.`);
