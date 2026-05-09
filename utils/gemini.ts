@@ -5,8 +5,6 @@ import { Logger } from "./logger";
 
 const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`;
 
-let retryCount = 0;
-
 function getApiKey() {
   if (config.apiKeys.length === 0) {
     Logger.error("No API keys provided in config.");
@@ -84,6 +82,7 @@ export async function geminiRequest({
   };
 
   // Loop to retry on 503 errors, which indicate the model is still loading
+  let retryCount = 0;
   while (true) {
     Logger.debug(`Sending request to Gemini API`);
     const start = Date.now();
@@ -112,7 +111,6 @@ export async function geminiRequest({
       Logger.error(`API Error: ${response.status} - ${errorText}`);
       if (response.status == 503) {
         if (retryCount > 5) {
-          retryCount = 0;
           if (config.skipHighDemand) throw new HighDemandError();
           return geminiCliRequest({
             instruction,
@@ -135,8 +133,6 @@ export async function geminiRequest({
       }
       process.exit(1);
     }
-
-    retryCount = 0.5; // Reset retry count on successful response
 
     const data = await response.json().catch((e) => {
       Logger.error(e);
@@ -207,6 +203,7 @@ export async function geminiCliRequest({
     ].join("\n"),
   );
   writeFileSync(".temp/output.txt", "");
+  let retryCount = 0;
   while (true) {
     try {
       execSync(
@@ -214,7 +211,7 @@ export async function geminiCliRequest({
         `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt" --model google/${config.model} --agent translate --thinking true -- --variant med`,
         {
           stdio: "inherit",
-          // timeout: 1000 * 60 * 10,
+          timeout: 1000 * 60 * 10,
           killSignal: "SIGKILL",
         },
       );
@@ -224,6 +221,13 @@ export async function geminiCliRequest({
       Logger.error(
         `Gemini CLI returned empty output. Retrying Gemini CLI request...`,
       );
+      retryCount++;
+      if (retryCount > 5) {
+        Logger.error(
+          `Gemini CLI returned empty output after 5 retries. Exiting.`,
+        );
+        process.exit(1);
+      }
       continue;
     }
     rmSync(".temp/AGENTS.md");
