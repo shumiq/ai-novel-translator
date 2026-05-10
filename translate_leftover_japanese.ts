@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, rmSync, writeFileSync } from "fs";
 import { config } from "./config";
 import { extractThai } from "./utils/extract";
 import { isJapanese } from "./utils/lang";
@@ -74,4 +74,6 @@ ${toBeTranslated.join("\n")}
       killSignal: "SIGKILL",
     },
   );
+
+  rmSync(".temp/AGENTS.md");
 }
