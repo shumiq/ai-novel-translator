@@ -7,12 +7,5 @@
     ],
     "plugin": [
         "opencode-gemini-auth@latest"
-    ],
-    "mode": {
-        "translate": {
-            "thinking_level": "medium",
-            "temperature": 1.0,
-            "prompt": "You are a professional Japanese to Thai light novel translator. Use natural Thai flow. Write output to `.temp/output.txt`."
-        }
-    }
+    ]
 }
