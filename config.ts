@@ -5,7 +5,9 @@ export const config = {
   title: "",
   provider: "gemini",
   model: "gemini-3.1-flash-lite-preview",
-  apiKeys: [],
+  apiKeys: process.env.GEMINI_API_KEY
+    ? process.env.GEMINI_API_KEY.split(",")
+    : [],
   language: "Japanese",
   runner: "api",
   pipeline: ["extraction", "translation", "consistency", "humanization"],
