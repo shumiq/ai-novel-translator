@@ -23,6 +23,8 @@ for (const branch of [...webBranches, ...epubBranches]) {
     Logger.info(`Fetch new chapters for branch ${branch}...`);
     execSync(`git checkout ${branch} -f`);
     execSync(`bun prepare.ts`);
+    execSync(`git add .`);
+    execSync(`git status`, { stdio: "inherit" });
     const changes = execSync(`git status --porcelain`, { encoding: "utf-8" })
       .trim()
       .split("\n")

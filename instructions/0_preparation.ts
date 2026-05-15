@@ -65,8 +65,36 @@ export async function preparation() {
         Logger.progress(`Copied: ${file}`);
       }
     });
+    if (
+      existsSync("./json/meta.json") &&
+      existsSync(join(config.originalPath, "meta.json"))
+    ) {
+      const data = JSON.parse(
+        readFileSync(join(config.originalPath, "meta.json"), "utf-8"),
+      ) as {
+        id: string;
+        title: string;
+        chapters: { ch: number; name: string }[];
+      };
+      const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
+        id: string;
+        title: string;
+        chapters: { ch: number; name: string }[];
+      };
+      for (const chapter of data.chapters) {
+        if (!meta.chapters.some((c) => c.ch === chapter.ch)) {
+          meta.chapters.push(chapter);
+        }
+      }
+      writeFileSync("./json/meta.json", JSON.stringify(meta, null, 2));
+    }
   }
   // #4. convert all json to html
+  const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
+    id: string;
+    title: string;
+    chapters: { ch: number; name: string }[];
+  };
   if (existsSync("./json")) {
     const jsonFiles = readdirSync("./json").filter((file) =>
       file.endsWith(".json"),
@@ -89,7 +117,13 @@ export async function preparation() {
         .filter(Boolean);
       writeFileSync(
         `./books/${file.replace(".json", ".html")}`,
-        [data.title || "(empty)", ...lines]
+        [
+          data.title ||
+            meta.chapters.find((c) => c.ch === Number(file.split(".")[0]))
+              ?.name ||
+            `ตอนที่ ${file.split(".")[0]}`,
+          ...lines,
+        ]
           .map((line) => `<p>${line.trim()}</p>`)
           .join("\n"),
       );
