@@ -13,7 +13,7 @@ files.forEach((file) => {
   const lines = rawHTML.split("\n");
   const result: string[] = [];
   let i = 0;
-
+  let notClosedLines = [] as number[];
   while (i < lines.length) {
     const line = lines[i] ?? "";
     const trimmedLine = line.trim();
@@ -23,6 +23,8 @@ files.forEach((file) => {
       let mergedContent = trimmedLine.replace(/<\/?p>/g, "");
       i++;
 
+      let hasClosed = false;
+      notClosedLines.push(i); // Keep track of lines that are not closed
       while (i < lines.length) {
         const nextLine = (lines[i] ?? "").trim();
 
@@ -31,9 +33,17 @@ files.forEach((file) => {
 
         const mergedQuoteCount = (mergedContent.match(/"/g) || []).length;
         if (mergedQuoteCount % 2 === 0) {
+          hasClosed = true;
           break;
         }
         i++;
+      }
+
+      if (!hasClosed && i >= lines.length) {
+        Logger.warn(
+          `\nUnmatched quotes in file: ${file} starting at line ${notClosedLines.join(", ")}.`,
+        );
+        return;
       }
 
       // 3. Wrap the clean content in a single set of tags
