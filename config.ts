@@ -8,7 +8,7 @@ export const novelConfig = {
 };
 
 export const appConfig = {
-  mode: "gemini",
+  mode: "api",
   fallbackAgent: "opencode",
   model: "gemini-3.1-flash-lite",
   apiKeys: process.env.GEMINI_API_KEY
