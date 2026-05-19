@@ -4,6 +4,7 @@ export const novelConfig = {
   dictionaryPath: "",
   title: "", // Don't need for EPUB
   originalLanguage: "Japanese",
+  additionalContext: [],
 };
 
 export const appConfig = {
