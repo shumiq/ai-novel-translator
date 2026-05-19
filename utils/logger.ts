@@ -1,8 +1,8 @@
-import { config } from "../config";
+import { appConfig } from "../config";
 
 export const Logger = {
   debug(...args: any[]) {
-    if (config.debug) {
+    if (appConfig.debug) {
       console.log(`[DEBUG] ${args.join(" ")}`);
     }
   },

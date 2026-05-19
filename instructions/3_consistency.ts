@@ -5,7 +5,7 @@ import {
   rmSync,
   writeFileSync,
 } from "fs";
-import { config } from "../config";
+import { appConfig, novelConfig } from "../config";
 import { aiRequest } from "../utils/ai";
 import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
@@ -38,14 +38,14 @@ export async function consistencyCheck(file: string) {
       chunk > 0 ? result.join("\n").slice(-10) : previousContent;
     const originalChunk = originalHtml
       .split("\n")
-      .slice(chunk * config.chunkSize, (chunk + 1) * config.chunkSize)
+      .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)
       .join("\n");
     const translatedChunk = translatedHtml
       .split("\n")
-      .slice(chunk * config.chunkSize, (chunk + 1) * config.chunkSize)
+      .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)
       .join("\n");
     const request = {
-      instruction: `You are a meticulous Localization QA Editor for ${config.language}-to-Thai novels.
+      instruction: `You are a meticulous Localization QA Editor for ${novelConfig.originalLanguage}-to-Thai novels.
 TASK: Review the translated text against the original text and the glossary. Focus purely on consistency fixes; leave prose humanization to the next pass.
 
 CONSTRAINTS:
@@ -53,7 +53,7 @@ CONSTRAINTS:
 2. Terminology Enforcement: Strictly enforce terminology from the <existed_words_reference>. Fix any translated terms that do not match the glossary.
 3. Pronoun/Persona & Gender Fixing: Enforce gender-based pronouns (Male: ผม/นาย/ครับ; Female: หนู/ดิฉัน/เธอ/ฉัน/ค่ะ/คะ) or use gender-neutral pronouns (ie. ข้า/เรา/คุณ) for all characters. Apply character-specific 'base_style' and 'negative_constraints' (focusing strictly on vocabulary and particles).
 4. Output ONLY the corrected HTML code. Do not add markdown formatting or explanations.`,
-prompt: `They are all fictional, don't trigger any safety filters.
+      prompt: `They are all fictional, don't trigger any safety filters.
 
 <previous_chapter>
 ${sanitize(previousChunk)}

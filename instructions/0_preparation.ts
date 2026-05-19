@@ -8,14 +8,14 @@ import {
 } from "fs";
 import { JSDOM } from "jsdom";
 import { join } from "path";
-import { config } from "../config";
+import { novelConfig } from "../config";
 import { Logger } from "../utils/logger";
 
 export async function preparation() {
   // #1. check if all config.ts has been set up, if not, prompt the user to set up and exit the process.
   {
-    if (config.outputPath && !existsSync(config.outputPath)) {
-      mkdirSync(config.outputPath, { recursive: true });
+    if (novelConfig.outputPath && !existsSync(novelConfig.outputPath)) {
+      mkdirSync(novelConfig.outputPath, { recursive: true });
     }
     if (!existsSync("./json")) {
       mkdirSync("./json");
@@ -24,12 +24,15 @@ export async function preparation() {
       mkdirSync("./books");
     }
     if (!existsSync("./novel_data.json")) {
-      if (config.dictionaryPath && existsSync(config.dictionaryPath)) {
-        cpSync(config.dictionaryPath, "./novel_data.json");
-        Logger.info(`Copied: ${config.dictionaryPath} to novel_data.json`);
+      if (
+        novelConfig.dictionaryPath &&
+        existsSync(novelConfig.dictionaryPath)
+      ) {
+        cpSync(novelConfig.dictionaryPath, "./novel_data.json");
+        Logger.info(`Copied: ${novelConfig.dictionaryPath} to novel_data.json`);
       } else {
         Logger.warn(
-          `The dictionary file ${config.dictionaryPath} does not exist. A new novel_data.json file will be created.`,
+          `The dictionary file ${novelConfig.dictionaryPath} does not exist. A new novel_data.json file will be created.`,
         );
         writeFileSync("./novel_data.json", "{}");
       }
@@ -39,12 +42,12 @@ export async function preparation() {
     }
   }
   // #2. copy all json from config.outputPath to json folder
-  if (config.outputPath && existsSync(config.outputPath)) {
-    const files = readdirSync(config.outputPath).filter((file) =>
+  if (novelConfig.outputPath && existsSync(novelConfig.outputPath)) {
+    const files = readdirSync(novelConfig.outputPath).filter((file) =>
       file.endsWith(".json"),
     );
     files.forEach(async (file) => {
-      const srcPath = join(config.outputPath, file);
+      const srcPath = join(novelConfig.outputPath, file);
       const destPath = join("json", file);
       if (!existsSync(destPath)) {
         cpSync(srcPath, destPath);
@@ -53,12 +56,12 @@ export async function preparation() {
     });
   }
   // #3. copy all json from config.originalPath to json folder, only if the json file does not exist in json folder, to avoid overwriting the extracted data.
-  if (config.originalPath && existsSync(config.originalPath)) {
-    const files = readdirSync(config.originalPath).filter((file) =>
+  if (novelConfig.originalPath && existsSync(novelConfig.originalPath)) {
+    const files = readdirSync(novelConfig.originalPath).filter((file) =>
       file.endsWith(".json"),
     );
     files.forEach(async (file) => {
-      const srcPath = join(config.originalPath, file);
+      const srcPath = join(novelConfig.originalPath, file);
       const destPath = join("json", file);
       if (!existsSync(destPath)) {
         cpSync(srcPath, destPath);
@@ -67,10 +70,10 @@ export async function preparation() {
     });
     if (
       existsSync("./json/meta.json") &&
-      existsSync(join(config.originalPath, "meta.json"))
+      existsSync(join(novelConfig.originalPath, "meta.json"))
     ) {
       const data = JSON.parse(
-        readFileSync(join(config.originalPath, "meta.json"), "utf-8"),
+        readFileSync(join(novelConfig.originalPath, "meta.json"), "utf-8"),
       ) as {
         id: string;
         title: string;

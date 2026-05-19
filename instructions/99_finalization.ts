@@ -8,7 +8,7 @@ import {
 } from "fs";
 import { JSDOM } from "jsdom";
 import { join } from "path";
-import { config } from "../config";
+import { novelConfig } from "../config";
 import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 
@@ -53,7 +53,7 @@ export async function finalization() {
       }
     });
     meta.chapters = meta.chapters.toSorted((a, b) => a.ch - b.ch);
-    meta.title = config.title;
+    meta.title = novelConfig.title;
     if (!meta.id.endsWith("-thai")) {
       meta.id = `${meta.id}-thai`;
     }
@@ -66,8 +66,8 @@ export async function finalization() {
   // #3. copy all json from json folder to config.outputPath, overwrite if exists.
   if (
     existsSync("./json") &&
-    config.outputPath &&
-    existsSync(config.outputPath)
+    novelConfig.outputPath &&
+    existsSync(novelConfig.outputPath)
   ) {
     const files = readdirSync("./json").filter((file) =>
       file.endsWith(".json"),
@@ -77,15 +77,15 @@ export async function finalization() {
     await Promise.all(
       files.map(async (file) => {
         const srcPath = join("./json", file);
-        const destPath = join(config.outputPath, file);
+        const destPath = join(novelConfig.outputPath, file);
         cpSync(srcPath, destPath);
         Logger.progress(`Copied: ${file}`);
       }),
     );
   }
   // #4. copy dictionary
-  if (config.dictionaryPath) {
-    cpSync("./novel_data.json", config.dictionaryPath);
-    Logger.info(`Copied: ./novel_data.json to ${config.dictionaryPath}`);
+  if (novelConfig.dictionaryPath) {
+    cpSync("./novel_data.json", novelConfig.dictionaryPath);
+    Logger.info(`Copied: ./novel_data.json to ${novelConfig.dictionaryPath}`);
   }
 }

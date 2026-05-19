@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { readFileSync, rmSync, writeFileSync } from "fs";
-import { config } from "./config";
+import { appConfig } from "./config";
 import { extractThai } from "./utils/extract";
 import { isJapanese } from "./utils/lang";
 import { Logger } from "./utils/logger";
@@ -67,7 +67,7 @@ ${toBeTranslated.join("\n")}
   );
 
   execSync(
-    `opencode run "Translate leftover Japanese text to Thai" --model google/${config.model} --thinking true -- --variant med`,
+    `opencode run "Translate leftover Japanese text to Thai" --model google/${appConfig.model} --thinking true -- --variant med`,
     {
       stdio: "inherit",
       timeout: 1000 * 60 * 10,

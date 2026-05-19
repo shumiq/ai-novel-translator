@@ -1,9 +1,6 @@
 {
   "context": {
-    "fileName": [
-      ".temp/AGENTS.md",
-      ".temp/PROMPT.md"
-    ]
+    "fileName": [".temp/AGENTS.md", ".temp/PROMPT.md"]
   },
   "experimental": {
     "contextManagement": true,
@@ -21,7 +18,8 @@
     }
   },
   "model": {
-    "disableLoopDetection": false
+    "disableLoopDetection": false,
+    "thinkingLevel": "medium"
   },
   "ui": {
     "showModelInfoInChat": true,

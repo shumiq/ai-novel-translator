@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { config } from "./config";
+import { appConfig } from "./config";
 import { extraction } from "./instructions/1_extraction";
 import { translation } from "./instructions/2_translation";
 import { consistencyCheck } from "./instructions/3_consistency";
@@ -33,7 +33,7 @@ export const runnerAPI = async () => {
       continue;
     }
     if (count++ >= LIMIT) {
-      if (config.loopSkip) writeFileSync("skip.txt", "");
+      if (appConfig.loopSkip) writeFileSync("skip.txt", "");
       process.exit(1);
     }
     try {
@@ -41,7 +41,7 @@ export const runnerAPI = async () => {
       while (true) {
         // PASS-1: Extract high-impact terms using the API and update the dictionary
         if (
-          config.pipeline.includes("extraction") &&
+          appConfig.pipeline.includes("extraction") &&
           !existsSync(`.temp/extraction_${file.replaceAll("/", "_")}`)
         ) {
           await extraction(file);
@@ -49,7 +49,7 @@ export const runnerAPI = async () => {
 
         // PASS-2: Translate the extracted terms using the API and update the dictionary with translations
         if (
-          config.pipeline.includes("translation") &&
+          appConfig.pipeline.includes("translation") &&
           !existsSync(`.temp/translated_${file.replaceAll("/", "_")}`)
         ) {
           await translation(file);
@@ -57,14 +57,14 @@ export const runnerAPI = async () => {
 
         // PASS-3: Consistency check - Ensure the translated file has matched translated terms from the dictionary.
         if (
-          config.pipeline.includes("consistency") &&
+          appConfig.pipeline.includes("consistency") &&
           !existsSync(`.temp/consistency_checked_${file.replaceAll("/", "_")}`)
         ) {
           await consistencyCheck(file);
         }
 
         // PASS-4: Humanize the translated text
-        if (config.pipeline.includes("humanization")) {
+        if (appConfig.pipeline.includes("humanization")) {
           await humanization(file);
         }
 
@@ -112,7 +112,7 @@ export const runnerAPI = async () => {
       continue;
     }
   }
-  if (config.loopSkip) {
+  if (appConfig.loopSkip) {
     if (readFileSync("skip.txt", "utf-8").trim() === "") process.exit(0);
     writeFileSync("skip.txt", "");
     process.exit(1);

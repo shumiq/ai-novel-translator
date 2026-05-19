@@ -1,20 +1,20 @@
 import { execSync } from "child_process";
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
-import { config } from "../config";
+import { appConfig } from "../config";
 import { Logger } from "./logger";
 
-const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent`;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model}:generateContent`;
 
 function getApiKey() {
-  if (config.apiKeys.length === 0) {
+  if (appConfig.apiKeys.length === 0) {
     Logger.error("No API keys provided in config.");
     process.exit(1);
   }
-  const nonExpiredKeys = config.apiKeys.filter(
+  const nonExpiredKeys = appConfig.apiKeys.filter(
     (key) => !existsSync(`.temp/${key}`),
   );
   if (nonExpiredKeys.length === 0) {
-    config.apiKeys.forEach((key) => {
+    appConfig.apiKeys.forEach((key) => {
       if (
         Date.now() - statSync(`.temp/${key}`).ctime.getTime() >
         1000 * 60 * 60
@@ -74,7 +74,7 @@ export async function geminiRequest({
     ...additionalBody,
     generationConfig: {
       thinkingConfig: {
-        thinkingLevel: config.thinking,
+        thinkingLevel: appConfig.thinking,
       },
       temperature: 1.0,
       ...(additionalBody as any)?.generationConfig,
@@ -94,7 +94,7 @@ export async function geminiRequest({
       // @ts-ignore - Bun-specific extension
       timeout: false,
       keepalive: true,
-      verbose: config.debug,
+      verbose: appConfig.debug,
     }).catch((e) => {
       Logger.error(
         `Request to Gemini API failed after ${Math.round((Date.now() - start) / 1000)} seconds`,
@@ -111,7 +111,7 @@ export async function geminiRequest({
       Logger.error(`API Error: ${response.status} - ${errorText}`);
       if (response.status == 503) {
         if (retryCount > 5) {
-          if (config.skipHighDemand) throw new HighDemandError();
+          if (appConfig.skipHighDemand) throw new HighDemandError();
           return geminiCliRequest({
             instruction,
             prompt,
@@ -140,7 +140,7 @@ export async function geminiRequest({
     });
 
     if (JSON.stringify(data).includes("PROHIBITED_CONTENT")) {
-      if (config.skipProhibitedContent) {
+      if (appConfig.skipProhibitedContent) {
         throw new ProhibitedContentError();
       }
       return geminiCliRequest({ instruction, prompt, body: additionalBody });
@@ -181,11 +181,12 @@ export async function geminiCliRequest({
   instruction,
   prompt,
   body: additionalBody,
-}: Parameters<typeof geminiRequest>[0]) {
+  runner = appConfig.fallbackAgent,
+}: Parameters<typeof geminiRequest>[0] & { runner?: string }) {
   writeFileSync(
     ".temp/AGENTS.md",
     [
-      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. ",
+      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. (always overwrite)",
       "",
       ...instruction.split("\n").map((line) => line.trim()),
     ].join("\n"),
@@ -193,7 +194,7 @@ export async function geminiCliRequest({
   writeFileSync(
     ".temp/PROMPT.md",
     [
-      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. ",
+      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. (always overwrite)",
       "",
       ...prompt.split("\n").map((line) => line.trim()),
       "",
@@ -202,31 +203,40 @@ export async function geminiCliRequest({
         : "Output must be in HTML format with SAME number of lines as <original_text>",
     ].join("\n"),
   );
-  writeFileSync(".temp/output.txt", "");
+  writeFileSync(".temp/output.txt", "(empty)");
   let retryCount = 0;
   while (true) {
     try {
-      execSync(
-        // `gemini --yolo --model ${config.model} --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save output in .temp/output.txt"`,
-        `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt" --model google/${config.model} --thinking true -- --variant med`,
-        {
-          stdio: "inherit",
-          timeout: 1000 * 60 * 10,
-          killSignal: "SIGKILL",
-        },
-      );
+      const prompt =
+        runner === "gemini"
+          ? `gemini --yolo --model ${appConfig.model} --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt"`
+          : `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt" --model google/${appConfig.model} --thinking true --variant med --agent api-fallback-handler`;
+      execSync(prompt, {
+        stdio: "inherit",
+        timeout: 1000 * 60 * 10,
+        killSignal: "SIGKILL",
+      });
+      if (additionalBody) {
+        const output = readFileSync(".temp/output.txt", "utf-8");
+        if (!output) {
+          writeFileSync(".temp/output.txt", JSON.stringify({}, null, 2));
+        }
+      }
     } catch {}
     const output = readFileSync(".temp/output.txt", "utf-8");
-    if (!output) {
+    if (output === "(empty)") {
       Logger.error(
         `Gemini CLI returned empty output. Retrying Gemini CLI request...`,
       );
       retryCount++;
-      if (retryCount > 5) {
+      if (retryCount > 3) {
         Logger.error(
           `Gemini CLI returned empty output after 5 retries. Exiting.`,
         );
-        process.exit(1);
+        rmSync(".temp/AGENTS.md");
+        rmSync(".temp/PROMPT.md");
+        rmSync(".temp/output.txt");
+        throw new HighDemandError();
       }
       continue;
     }

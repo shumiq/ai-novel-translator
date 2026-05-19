@@ -1,14 +1,14 @@
-import { config } from "../config";
+import { novelConfig } from "../config";
 
 export const isJapanese = (text: string) =>
   /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(text);
 
 export const isThai = (text: string) =>
   /\p{Script=Thai}/u.test(text) &&
-  (config.language !== "Japanese" ||
+  (novelConfig.originalLanguage !== "Japanese" ||
     text.split(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u)
       .length < 100) &&
-  (config.language !== "English" ||
+  (novelConfig.originalLanguage !== "English" ||
     text
       .split("\n")
       .map((line) => line.replaceAll("<p>", "").replaceAll("</p>", "").trim())

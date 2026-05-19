@@ -5,7 +5,7 @@ import { extractExistedWords } from "../utils/dictionary";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import { config } from "../config";
+import { appConfig, novelConfig } from "../config";
 import { getPreviousChapterContent } from "../utils/extract";
 
 export async function translation(file: string) {
@@ -22,11 +22,11 @@ export async function translation(file: string) {
       chunk > 0 ? result.join("\n").slice(-10) : previousContent;
     const processedChunk = sanitize(rawHTML)
       .split("\n")
-      .slice(chunk * config.chunkSize, (chunk + 1) * config.chunkSize)
+      .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)
       .join("\n");
     const request = {
-      instruction: `You are an expert ${config.language}-to-Thai literary translator specializing in light novels and web novels.
-TASK: Translate the provided ${config.language} HTML text into Thai.
+      instruction: `You are an expert ${novelConfig.originalLanguage}-to-Thai literary translator specializing in light novels and web novels.
+TASK: Translate the provided ${novelConfig.originalLanguage} HTML text into Thai.
 
 CONSTRAINTS:
 1. 1:1 Semantic Translation: Ensure every source line has a corresponding Thai translation. Do not merge, skip, or summarize.
