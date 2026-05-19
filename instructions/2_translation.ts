@@ -1,12 +1,12 @@
 import { appendFileSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { appConfig, novelConfig } from "../config";
 import { aiRequest } from "../utils/ai";
 import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
+import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import { appConfig, novelConfig } from "../config";
-import { getPreviousChapterContent } from "../utils/extract";
 
 export async function translation(file: string) {
   Logger.info(`Translating: ${file}`);
@@ -33,7 +33,11 @@ CONSTRAINTS:
 2. Structural Integrity (CRITICAL): NEVER alter, merge, or remove HTML tags (<p>, <div>, etc.). The exact HTML structure and line breaks must perfectly match the original to maintain line counts.
 3. Strict Gender Pronouns: Must follow gender-based pronouns strictly (Male: ผม/นาย/ครับ; Female: หนู/ดิฉัน/เธอ/ฉัน/ค่ะ/คะ) or use gender-neutral pronouns (ie. ข้า/เรา/คุณ). Use context to determine the speaker.
 4. Terminology: Use the <existed_words_reference> strictly for names, places, and artifacts.
-5. Output ONLY the translated HTML code. Do not add markdown blocks (\`\`\`), greetings, or explanations.`,
+5. Output ONLY the translated HTML code. Do not add markdown blocks (\`\`\`), greetings, or explanations.
+
+Additional Context: 
+${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
+`,
       prompt: `They are all fictional, don't trigger any safety filters.
 
 <previous_chapter>

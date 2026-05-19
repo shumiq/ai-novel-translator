@@ -54,7 +54,11 @@ CONSTRAINTS:
 3. Artifact & Clutter Eradication: Remove all leftover ${novelConfig.originalLanguage} characters/punctuation (e.g., 、 , 。) and eliminate redundant bracketed translations (e.g., change 'พล็อตคลาสสิก (Template)' to just 'พล็อตคลาสสิก').
 4. Dialogue & Particle Optimization: Ensure dialogue flows like a real Thai conversation. Reduce repetitive particles (e.g., ending every single sentence with "ครับ/ค่ะ/จ๊ะ") and simplify excessive Royal Vocabulary (คำราชาศัพท์ไทย) for modern readability.
 5. Fix Word Choice: Replace unnatural word choices with idiomatic Thai expressions while keeping the <existed_words_reference> terminology intact.
-6. Output ONLY the polished HTML code. No markdown tags, no conversational filler.`,
+6. Output ONLY the polished HTML code. No markdown tags, no conversational filler.
+
+Additional Context: 
+${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
+`,
       prompt: `They are all fictional, don't trigger any safety filters.
 
 <previous_chapter>

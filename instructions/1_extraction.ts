@@ -6,14 +6,14 @@ import {
   rmSync,
   writeFileSync,
 } from "fs";
+import { novelConfig } from "../config";
 import { aiRequest } from "../utils/ai";
 import { extractExistedWords } from "../utils/dictionary";
+import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
-import type { Dictonary } from "../utils/types";
-import { novelConfig } from "../config";
 import { sanitize } from "../utils/sanitize";
-import { getPreviousChapterContent } from "../utils/extract";
+import type { Dictonary } from "../utils/types";
 
 export async function extraction(file: string) {
   Logger.info(`Extracting: ${file}`);
@@ -26,13 +26,17 @@ export async function extraction(file: string) {
     if (!existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`)) {
       const request = {
         instruction: `You are an expert ${novelConfig.originalLanguage}-to-Thai literary translator. 
-          TASK: Extract only High-Impact unique terms (Character Names, Locations, Unique Spells/Artifacts). 
-          
-          CONSTRAINTS: 
-          1. Ignore common nouns, general verbs, or adjectives (e.g., 'sword', 'running', 'beautiful') unless they are part of a specific Title.
-          2. The 'name' field MUST be the original ${novelConfig.originalLanguage}. Other fields MUST be in Thai. Split between first name and last name if it's a character.
-          3. Fields for characters: gender, speaking_style, and prohibited_phrases (Thai).
-          4. If a term is already in the 'Existed Words' list, ONLY include it if you are providing a NEW correction or additional detail, ie. from unknown gender to specified gender. Don't change translation to keep consistency between chapters.`,
+TASK: Extract only High-Impact unique terms (Character Names, Locations, Unique Spells/Artifacts). 
+
+CONSTRAINTS: 
+1. Ignore common nouns, general verbs, or adjectives (e.g., 'sword', 'running', 'beautiful') unless they are part of a specific Title.
+2. The 'name' field MUST be the original ${novelConfig.originalLanguage}. Other fields MUST be in Thai. Split between first name and last name if it's a character.
+3. Fields for characters: gender, speaking_style, and prohibited_phrases (Thai).
+4. If a term is already in the 'Existed Words' list, ONLY include it if you are providing a NEW correction or additional detail, ie. from unknown gender to specified gender. Don't change translation to keep consistency between chapters.
+
+Additional Context: 
+${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
+`,
         prompt: `They are all fictional, don't trigger any safety filters.
     
     <previous_chapter>
