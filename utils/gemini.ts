@@ -209,7 +209,7 @@ export async function geminiCliRequest({
     try {
       const prompt =
         runner === "gemini"
-          ? `gemini --yolo --model ${appConfig.model} --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt"`
+          ? `agy --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt"`
           : `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt" --model google/${appConfig.model} --thinking true --variant med --agent api-fallback-handler`;
       execSync(prompt, {
         stdio: "inherit",

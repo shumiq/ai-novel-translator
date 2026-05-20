@@ -93,12 +93,12 @@ export async function preparation() {
     }
   }
   // #4. convert all json to html
-  const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
-    id: string;
-    title: string;
-    chapters: { ch: number; name: string }[];
-  };
-  if (existsSync("./json")) {
+  if (existsSync("./json/meta.json")) {
+    const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
+      id: string;
+      title: string;
+      chapters: { ch: number; name: string }[];
+    };
     const jsonFiles = readdirSync("./json").filter((file) =>
       file.endsWith(".json"),
     );
