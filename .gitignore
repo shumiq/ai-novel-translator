@@ -40,3 +40,4 @@ books/**/*
 !books/**/*.html
 !books/**/*.xhtml
 !books/**/*.opf
+.antigravitycli

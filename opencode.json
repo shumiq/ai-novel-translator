@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "autoupdate": true,
-  "instructions": [".temp/AGENTS.md", ".temp/PROMPT.md"],
+  "instructions": [".temp/INSTRUCTION.md", ".temp/PROMPT.md"],
   "plugin": ["opencode-gemini-auth@latest"]
 }

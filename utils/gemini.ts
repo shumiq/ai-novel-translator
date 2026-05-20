@@ -184,7 +184,7 @@ export async function geminiCliRequest({
   runner = appConfig.fallbackAgent,
 }: Parameters<typeof geminiRequest>[0] & { runner?: string }) {
   writeFileSync(
-    ".temp/AGENTS.md",
+    ".temp/INSTRUCTION.md",
     [
       "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. (always overwrite)",
       "",
@@ -233,14 +233,14 @@ export async function geminiCliRequest({
         Logger.error(
           `Gemini CLI returned empty output after 5 retries. Exiting.`,
         );
-        rmSync(".temp/AGENTS.md");
+        rmSync(".temp/INSTRUCTION.md");
         rmSync(".temp/PROMPT.md");
         rmSync(".temp/output.txt");
         throw new HighDemandError();
       }
       continue;
     }
-    rmSync(".temp/AGENTS.md");
+    rmSync(".temp/INSTRUCTION.md");
     rmSync(".temp/PROMPT.md");
     rmSync(".temp/output.txt");
     return output;

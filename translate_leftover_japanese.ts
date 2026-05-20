@@ -29,7 +29,7 @@ while (true) {
   }
 
   writeFileSync(
-    ".temp/AGENTS.md",
+    ".temp/INSTRUCTION.md",
     `# Agent Task: Japanese to Thai Translation (Leftover Cleanup)
 
 ## Role
@@ -75,5 +75,5 @@ ${toBeTranslated.join("\n")}
     },
   );
 
-  rmSync(".temp/AGENTS.md");
+  rmSync(".temp/INSTRUCTION.md");
 }
