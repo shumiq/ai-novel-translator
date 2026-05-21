@@ -7,6 +7,7 @@ import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { isThai } from "../utils/lang";
 
 export async function translation(file: string) {
   Logger.info(`Translating: ${file}`);
@@ -80,6 +81,16 @@ Instruction: Translate the <original_text> to Thai line-by-line following the 1:
     Logger.debug(`Translation completed. Validating line counts...`);
     if (countLines(processedChunk) !== countLines(translatedHtml)) {
       Logger.error(`Line count mismatch for file ${file} chunk ${chunk + 1}`);
+      Logger.error(
+        `output text (first 10 lines): ${translatedHtml.split("\n").slice(0, 10).join("\n")}`,
+      );
+      continue;
+    }
+    Logger.debug(`Line count validation passed. Validating Thai language...`);
+    if (!isThai(translatedHtml)) {
+      Logger.error(
+        `Translation does not appear to be in Thai for file ${file} chunk ${chunk + 1}`,
+      );
       Logger.error(
         `output text (first 10 lines): ${translatedHtml.split("\n").slice(0, 10).join("\n")}`,
       );

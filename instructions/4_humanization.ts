@@ -13,6 +13,7 @@ import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { isThai } from "../utils/lang";
 
 const getSourceFile = (file: string) => {
   const files = [
@@ -101,6 +102,16 @@ Instruction: Rewrite and humanize the <translated_text> for superior Thai litera
     Logger.debug(`Humanization completed. Validating line counts...`);
     if (countLines(translatedChunk) !== countLines(humanizedHtml)) {
       Logger.error(`Line count mismatch for file ${file} chunk ${chunk + 1}`);
+      Logger.error(
+        `output text (first 10 lines): ${humanizedHtml.split("\n").slice(0, 10).join("\n")}`,
+      );
+      continue;
+    }
+    Logger.debug(`Line count validation passed. Validating Thai language...`);
+    if (!isThai(humanizedHtml)) {
+      Logger.error(
+        `Humanized output does not appear to be in Thai for file ${file} chunk ${chunk + 1}`,
+      );
       Logger.error(
         `output text (first 10 lines): ${humanizedHtml.split("\n").slice(0, 10).join("\n")}`,
       );

@@ -13,6 +13,7 @@ import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { isThai } from "../utils/lang";
 
 const getSourceFile = (file: string) => {
   const files = [`.temp/translated_${file.replaceAll("/", "_")}`, file];
@@ -103,6 +104,16 @@ Instruction: Perform a consistency fix on the <translated_text> based on the ref
     Logger.debug(`Consistency check completed. Validating line counts...`);
     if (countLines(originalChunk) !== countLines(consistencyCheckedHtml)) {
       Logger.error(`Line count mismatch for file ${file} chunk ${chunk + 1}`);
+      Logger.error(
+        `output text (first 10 lines): ${consistencyCheckedHtml.split("\n").slice(0, 10).join("\n")}`,
+      );
+      continue;
+    }
+    Logger.debug(`Line count validation passed. Validating Thai language...`);
+    if (!isThai(consistencyCheckedHtml)) {
+      Logger.error(
+        `Consistency check output does not appear to be in Thai for file ${file} chunk ${chunk + 1}`,
+      );
       Logger.error(
         `output text (first 10 lines): ${consistencyCheckedHtml.split("\n").slice(0, 10).join("\n")}`,
       );
