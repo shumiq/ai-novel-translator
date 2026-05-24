@@ -53,7 +53,8 @@ CONSTRAINTS:
 1. Structural Integrity (CRITICAL): NEVER alter, merge, or remove HTML tags (<p>, <div>, etc.). Every line must correspond 1-to-1 with the original HTML.
 2. Terminology Enforcement: Strictly enforce terminology from the <existed_words_reference>. Fix any translated terms that do not match the glossary.
 3. Pronoun/Persona & Gender Fixing: Enforce gender-based pronouns (Male: ผม/นาย/ครับ; Female: หนู/ดิฉัน/เธอ/ฉัน/ค่ะ/คะ) or use gender-neutral pronouns (ie. ข้า/เรา/คุณ) for all characters. Apply character-specific 'base_style' and 'negative_constraints' (focusing strictly on vocabulary and particles).
-4. Output ONLY the corrected HTML code. Do not add markdown formatting or explanations.
+4. Do not add parentheses in translations unless the original text contains parentheses.
+5. Output ONLY the corrected HTML code. Do not add markdown formatting or explanations.
 
 Additional Context: 
 ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}

@@ -33,6 +33,7 @@ CONSTRAINTS:
 2. The 'name' field MUST be the original ${novelConfig.originalLanguage}. Other fields MUST be in Thai. Split between first name and last name if it's a character.
 3. Fields for characters: gender, speaking_style, and prohibited_phrases (Thai).
 4. If a term is already in the 'Existed Words' list, ONLY include it if you are providing a NEW correction or additional detail, ie. from unknown gender to specified gender. Don't change translation to keep consistency between chapters.
+5. Do not add parentheses in translations unless original or name contains parentheses.
 
 Additional Context: 
 ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
