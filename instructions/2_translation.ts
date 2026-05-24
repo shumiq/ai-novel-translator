@@ -5,9 +5,9 @@ import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
 import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
+import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import { isThai } from "../utils/lang";
 
 export async function translation(file: string) {
   Logger.info(`Translating: ${file}`);
@@ -20,7 +20,9 @@ export async function translation(file: string) {
   const result = [] as string[];
   while (true) {
     const previousChunk =
-      chunk > 0 ? result.join("\n").slice(-10) : previousContent;
+      chunk > 0
+        ? result.slice(-appConfig.previousChunk).join("\n")
+        : previousContent;
     const processedChunk = sanitize(rawHTML)
       .split("\n")
       .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)

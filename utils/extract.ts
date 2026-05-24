@@ -1,6 +1,7 @@
 import { Glob } from "bun";
 import { readFileSync } from "fs";
 import { JSDOM } from "jsdom";
+import { appConfig } from "../config";
 import { isThai } from "./lang";
 
 const glob = new Glob("books/**/*html");
@@ -47,7 +48,10 @@ export function extractThai() {
   });
 }
 
-export function getPreviousChapterContent(file: string, last = 10) {
+export function getPreviousChapterContent(
+  file: string,
+  last = appConfig.previousChunk,
+) {
   const files = (Array.from(glob.scanSync(".")) as string[])
     .map((file) => file.replaceAll("\\", "/"))
     .filter((file) => {

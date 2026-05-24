@@ -18,7 +18,8 @@ export const appConfig = {
   skipProhibitedContent: false,
   skipHighDemand: false,
   loopSkip: false,
-  chunkSize: 200,
+  previousChunk: 30,
+  chunkSize: 100,
   thinking: "medium",
   debug: false,
 };
