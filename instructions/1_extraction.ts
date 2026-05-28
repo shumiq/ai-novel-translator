@@ -13,6 +13,7 @@ import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { isJapanese } from "../utils/lang";
 import type { Dictonary } from "../utils/types";
 
 export async function extraction(file: string) {
@@ -151,33 +152,42 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
       currentData = JSON.parse(readFileSync("novel_data.json", "utf-8"));
     } catch {}
 
+    let hasEmptyTranslations = false;
+
     for (const item of parsedData.items || []) {
       let { name, type, ...rest } = item;
       name = name.toLowerCase();
       if (/[０-９]/.test(name) && JSON.stringify(rest).includes("ตอน"))
         continue;
       if (currentData[name]) {
-        Logger.debug(`Update existing term: ${name}`);
-        currentData[name] = {
-          ...currentData[name],
-          ...rest,
-          example: Array.from(
-            new Set([
-              ...((currentData[name] as any).example ?? []),
-              ...((rest as any).example ?? []),
-            ]),
-          ),
-          translations: Array.from(
-            new Set([
-              ...((currentData[name] as any).translations ?? []),
-              ...((rest as any).translations ?? []),
-            ]),
-          ),
-        };
-      } else {
-        Logger.debug(`Add new term: ${name}`);
-        currentData[name] = { ...rest };
+        Logger.debug(`Skip existing term: ${name}`);
+        continue;
       }
+
+      if (Array.isArray(rest.translations)) {
+        rest.translations = rest.translations.filter(
+          (t: string) => !isJapanese(t),
+        );
+      }
+
+      if (!rest.translations || rest.translations.length === 0) {
+        Logger.warn(
+          `All translations for '${name}' contained Japanese characters. Re-running extraction for ${file}.`,
+        );
+        hasEmptyTranslations = true;
+        continue;
+      }
+
+      Logger.debug(`Add new term: ${name}`);
+      currentData[name] = { ...rest };
+    }
+
+    if (hasEmptyTranslations) {
+      if (
+        existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`)
+      )
+        rmSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`);
+      continue;
     }
 
     writeFileSync("novel_data.json", JSON.stringify(currentData, null, 2));

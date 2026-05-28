@@ -28,7 +28,7 @@ function getApiKey() {
     Logger.error(
       "All API keys have been used up. Please add more keys to config.",
     );
-    process.exit(1);
+    return;
   }
   return nonExpiredKeys[Math.floor(Math.random() * nonExpiredKeys.length)];
 }
@@ -86,7 +86,16 @@ export async function geminiRequest({
   while (true) {
     Logger.debug(`Sending request to Gemini API`);
     const start = Date.now();
-    const response = await fetch(`${url}?key=${getApiKey()}`, {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      Logger.info("No available API keys. Falling back to Gemini CLI...");
+      return geminiCliRequest({
+        instruction,
+        prompt,
+        body: additionalBody,
+      });
+    }
+    const response = await fetch(`${url}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -127,7 +136,7 @@ export async function geminiRequest({
         Logger.error(
           "API key rate limit reached. Marking current key as used and retrying with next key...",
         );
-        writeFileSync(`.temp/${getApiKey()}`, "used");
+        writeFileSync(`.temp/${apiKey}`, "used");
         await new Promise((res) => setTimeout(res, 5000));
         continue;
       }

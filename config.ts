@@ -19,7 +19,7 @@ export const appConfig = {
   skipHighDemand: false,
   loopSkip: false,
   previousChunk: 30,
-  chunkSize: 100,
+  chunkSize: 300,
   thinking: "medium",
   debug: false,
 };
