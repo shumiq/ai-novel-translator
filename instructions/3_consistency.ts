@@ -107,7 +107,11 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     const consistencyCheckedHtml = sanitize(response);
 
     Logger.debug(`Consistency check completed. Validating...`);
-    const consistencyError = validate(originalChunk, consistencyCheckedHtml, `file ${file} chunk ${chunk + 1}`);
+    const consistencyError = validate(
+      originalChunk,
+      consistencyCheckedHtml,
+      `file ${file} chunk ${chunk + 1}`,
+    );
     if (consistencyError) {
       validationError = validationError
         ? `${validationError}\n---\n${consistencyError}`

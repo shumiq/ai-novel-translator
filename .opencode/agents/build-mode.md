@@ -55,6 +55,7 @@ utils/               → Shared utilities
    - `bun finalize.ts` to test finalization
 
 ## Important Rules
+
 - Never hardcode API keys — they come from `.env` via `config.ts`
 - Never modify `.env` or `.gitignore` without explicit request
 - Always preserve the 1:1 line correspondence in translation passes

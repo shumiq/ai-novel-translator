@@ -45,12 +45,21 @@ export function validate(
     const beforeChar = beforeLine.match(/<p[^>]*>\s*(.)/)?.[1];
     const afterChar = afterLine.match(/<p[^>]*>\s*(.)/)?.[1];
 
-    const countPairs = (s: string) =>
-      (s.match(
-        /[\(\)（）\[\]【】｛｝{}〔〕〈〉《》「」『』""''«»]/g,
-      ) || []).length;
-    if (countPairs(beforeLine) !== countPairs(afterLine)) {
-      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${countPairs(beforeLine)}, translated has ${countPairs(afterLine)}`;
+    const countQuotesAndBrackets = (s: string) =>
+      (s.match(/["''""'\[\]【】｛｝{}〔〕〈〉《》「」『』〝〟«»]/g) || [])
+        .length;
+    const countParens = (s: string) => (s.match(/[\(\)（）]/g) || []).length;
+
+    if (
+      countQuotesAndBrackets(beforeLine) !== countQuotesAndBrackets(afterLine)
+    ) {
+      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${countQuotesAndBrackets(beforeLine)}, translated has ${countQuotesAndBrackets(afterLine)}`;
+      Logger.error(msg);
+      return msg;
+    }
+
+    if (countParens(afterLine) > countParens(beforeLine)) {
+      const msg = `Parenthesis count mismatch at line ${i + 1}${label}: original has ${countParens(beforeLine)}, translated has ${countParens(afterLine)}`;
       Logger.error(msg);
       return msg;
     }

@@ -34,6 +34,9 @@ while (true) {
     ".temp/INSTRUCTION.md",
     `# Agent Task: English to Thai Translation (Leftover Cleanup)
 
+## Mode
+This task should be handled by the **leftover-translator** agent (see \`.opencode/agents/leftover-translator.md\`).
+
 ## Role
 You are a localization expert proficient in English and Thai. Your task is to identify and translate specific lines of English text remaining in HTML files into natural-sounding Thai.
 
@@ -69,7 +72,7 @@ ${toBeTranslated.join("\n")}
   );
 
   execSync(
-    `opencode run "Translate leftover English text to Thai" --model google/${appConfig.model} --thinking true -- --variant med`,
+    `opencode run "Translate leftover English text to Thai" --model google/${appConfig.model} --agent leftover-translator --thinking true -- --variant med`,
     {
       stdio: "inherit",
       timeout: 1000 * 60 * 10,

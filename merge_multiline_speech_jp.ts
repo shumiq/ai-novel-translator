@@ -1,10 +1,11 @@
+import { execSync } from "child_process";
 import { Glob } from "bun";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, rmSync, writeFileSync } from "fs";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
+import { appConfig } from "./config";
 
 const glob = new Glob("books/**/*html");
-const files = Array.from(glob.scanSync(".")) as string[];
 
 function isLineCloseQuote(line: string) {
   const openQuoteCount =
@@ -14,55 +15,156 @@ function isLineCloseQuote(line: string) {
   return openQuoteCount === closeQuoteCount;
 }
 
-files.forEach((file) => {
-  const rawHTML = readFileSync(file, "utf-8");
-  if (isThai(rawHTML)) return;
+function getQuoteBalance(line: string): {
+  openCount: number;
+  closeCount: number;
+  diff: number;
+} {
+  const openCount =
+    (line.match(/「/g) || []).length + (line.match(/『/g) || []).length;
+  const closeCount =
+    (line.match(/」/g) || []).length + (line.match(/』/g) || []).length;
+  return { openCount, closeCount, diff: openCount - closeCount };
+}
 
-  const lines = rawHTML.split("\n");
-  const result: string[] = [];
-  let i = 0;
-  let notClosedLines = [] as number[];
-  while (i < lines.length) {
-    const line = lines[i] ?? "";
-    const trimmedLine = line.trim();
+/** Detect lines where the quote count is unbalanced. */
+function findProblematicLines(content: string): number[] {
+  const lines = content.split("\n");
+  const problemLines: number[] = [];
+  lines.forEach((line, index) => {
+    const { openCount, closeCount } = getQuoteBalance(line);
+    if (openCount !== closeCount) {
+      problemLines.push(index + 1);
+    }
+  });
+  return problemLines;
+}
 
-    if (!isLineCloseQuote(trimmedLine)) {
-      // 1. Strip the <p> tags from the first line immediately
-      let mergedContent = trimmedLine.replace(/<\/?p>/g, "");
-      i++;
+while (true) {
+  const files = Array.from(glob.scanSync(".")) as string[];
+  const unmatchedFiles: string[] = [];
 
-      let hasClosed = false;
-      notClosedLines.push(i); // Keep track of lines that are not closed
-      while (i < lines.length) {
-        const nextLine = (lines[i] ?? "").trim();
+  for (const file of files) {
+    const rawHTML = readFileSync(file, "utf-8");
+    if (isThai(rawHTML)) continue;
 
-        // 2. Strip tags from subsequent lines and merge
-        mergedContent = mergedContent + " " + nextLine.replace(/<\/?p>/g, "");
+    const lines = rawHTML.split("\n");
+    const result: string[] = [];
+    let i = 0;
 
-        if (isLineCloseQuote(mergedContent)) {
-          hasClosed = true;
-          break;
-        }
+    while (i < lines.length) {
+      const line = lines[i] ?? "";
+      const trimmedLine = line.trim();
+
+      if (!isLineCloseQuote(trimmedLine)) {
+        // 1. Strip the <p> tags from the first line immediately
+        let mergedContent = trimmedLine.replace(/<\/?p>/g, "");
         i++;
+
+        // 2. Keep merging lines until quotes balance
+        while (i < lines.length) {
+          const nextLine = (lines[i] ?? "").trim();
+          mergedContent = mergedContent + " " + nextLine.replace(/<\/?p>/g, "");
+
+          if (isLineCloseQuote(mergedContent)) {
+            break;
+          }
+          i++;
+        }
+
+        // 3. If we reached end-of-file and quotes still don't balance, flag the file
+        if (!isLineCloseQuote(mergedContent)) {
+          unmatchedFiles.push(file);
+          break; // Stop processing this file (leave it unmodified)
+        }
+
+        // 4. Wrap the clean content in a single set of tags
+        result.push(`<p>${mergedContent}</p>`);
+        i++;
+        continue;
       }
 
-      if (!hasClosed && i >= lines.length) {
-        Logger.warn(
-          `\nUnmatched quotes in file: ${file} starting at line ${notClosedLines.join(", ")}.`,
-        );
-        return;
-      }
-
-      // 3. Wrap the clean content in a single set of tags
-      result.push(`<p>${mergedContent}</p>`);
+      result.push(line ?? "");
       i++;
-      continue;
     }
 
-    result.push(line ?? "");
-    i++;
+    // If the file was flagged, skip writing it (keep original for agent to fix)
+    if (unmatchedFiles.includes(file)) continue;
+
+    writeFileSync(file, result.join("\n"));
+    Logger.progress(`Processed ${file}`);
   }
 
-  writeFileSync(file, result.join("\n"));
-  Logger.progress(`Processed ${file}`);
-});
+  if (unmatchedFiles.length === 0) {
+    Logger.info("All speech lines merged successfully.");
+    break;
+  }
+
+  // ── Build task list for the agent ──────────────────────────────────
+  Logger.warn(
+    `\nFound ${unmatchedFiles.length} file(s) with probably-mistaken quotes. Dispatching to agent for fixing...`,
+  );
+
+  const taskLines: string[] = [];
+  for (const file of unmatchedFiles) {
+    const content = readFileSync(file, "utf-8");
+    const lines = findProblematicLines(content);
+    if (lines.length > 0) {
+      taskLines.push(`| ${file} | ${lines.join(", ")} |`);
+    }
+  }
+
+  writeFileSync(
+    ".temp/INSTRUCTION.md",
+    `# Agent Task: Fix Unmatched Japanese Quote Characters
+
+## Mode
+This task should be handled by the **japanese-quote-fixer** agent (see \`.opencode/agents/japanese-quote-fixer.md\`).
+
+## Role
+You are a Japanese text formatting expert. Your task is to fix unmatched Japanese quote characters (\`「\`, \`」\`, \`『\`, \`』\`) in HTML files.
+
+## Objective
+Directly edit the specified files and lines so that the number of opening quotes (\`「\` + \`『\`) equals the number of closing quotes (\`」\` + \`』\`) on every line. The quotes may be unbalanced because the author forgot to open/close a quote, used an extra quote, or used a different symbol.
+
+## Constraints
+- **No Code Generation:** Do not write Python, Bash, or any other scripts to perform the task. Edit the files directly.
+- **Precision:** Only modify the specific line numbers provided. Do not change other lines.
+- **Integrity:** Ensure HTML tags (e.g., \`<p>\`, \`<a>\`, \`<span>\`) are preserved exactly as they are; only fix the quote characters.
+
+## Execution Steps
+1.  **Locate:** Open the file specified in the task list.
+2.  **Identify:** Go to the exact line number(s) mentioned.
+3.  **Analyze:** Count the \`「\`, \`」\`, \`『\`, and \`』\` characters. Determine if the line has too many opening or closing quotes.
+4.  **Fix:**
+    - If an opening quote is missing, add one where it makes sense contextually.
+    - If a closing quote is missing, add one where it makes sense contextually.
+    - If the wrong quote symbol was used (e.g., opening \`「\` mistakenly used where closing \`」\` was intended), replace it with the correct one.
+    - If there are extra duplicate quotes, remove the extras.
+5.  **Verify:** After your edit, the number of opening quotes (\`「\` + \`『\`) should equal the number of closing quotes (\`」\` + \`』\`) on every line you touched. Move to the next file in the list until all are completed.
+
+## Task List
+
+| File Path | Target Lines |
+| :--- | :--- |
+${taskLines.join("\n")}
+
+## Quality Checklist
+- Is the quote count balanced on each line I edited?
+- Are the quotes contextually correct (do they match the surrounding speech)?
+- Did I accidentally delete any HTML closing tags?
+- Did I skip any lines in files with multiple target lines?
+`,
+  );
+
+  execSync(
+    `opencode run "Fix unmatched Japanese quote characters" --model google/${appConfig.model}     --agent japanese-quote-fixer --thinking true -- --variant med`,
+    {
+      stdio: "inherit",
+      timeout: 1000 * 60 * 10,
+      killSignal: "SIGKILL",
+    },
+  );
+
+  rmSync(".temp/INSTRUCTION.md");
+}

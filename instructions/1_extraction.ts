@@ -183,9 +183,7 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
     }
 
     if (hasEmptyTranslations) {
-      if (
-        existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`)
-      )
+      if (existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`))
         rmSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`);
       continue;
     }

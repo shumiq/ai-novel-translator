@@ -14,6 +14,7 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 ## Workflow
 
 ### 1. Preparation
+
 - Run `bun prepare.ts` to:
   - Create directories (`./json`, `./books`, `.temp`)
   - Copy JSON files from source paths to `./json/`
@@ -21,6 +22,7 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
   - Convert JSON chapters to HTML in `./books/`
 
 ### 2. Translation Pipeline (via runner.ts)
+
 - Run `bun runner.ts` to execute the 4-pass pipeline on each non-Thai HTML file:
   - **Pass 1 — Extraction:** Extracts character names, terminology from source and updates dictionary
   - **Pass 2 — Translation:** Translates Japanese HTML to Thai in chunks
@@ -30,12 +32,14 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 - The runner processes up to 10 files per run (configurable in `config.ts`)
 
 ### 3. Error Recovery
+
 - If `runner.ts` fails on a file, it adds the filename to `skip.txt`
 - Check `skip.txt` for failed files after each run
 - Investigate and fix issues, then remove the file from `skip.txt` and re-run
 - The pipeline loops automatically in `start.bat`; as this agent you should handle retries manually
 
 ### 4. Finalization
+
 - Run `bun finalize.ts` to:
   - Convert translated Thai HTML back to JSON chapters
   - Update `meta.json` with chapter titles
@@ -43,6 +47,7 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
   - Save the updated dictionary
 
 ## Configuration Reference
+
 - `config.ts` — Read this first to understand `novelConfig` and `appConfig` settings
 - `appConfig.pipeline` — Which passes to run (default: extraction, translation, consistency, humanization)
 - `appConfig.chunkSize` — Lines per chunk sent to AI (default: 300)
@@ -50,6 +55,7 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 - `skip.txt` — Newline-separated list of files to skip during pipeline runs
 
 ## Important Notes
+
 - Never modify files in `books/` or `json/` directly unless necessary for error recovery
 - Monitor the `.temp/` directory for marker files indicating pass completion
 - If the AI API fails, the runner will automatically use the CLI fallback (api-fallback-handler)

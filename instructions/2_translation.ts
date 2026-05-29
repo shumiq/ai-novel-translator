@@ -84,7 +84,11 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     const translatedHtml = sanitize(response);
 
     Logger.debug(`Translation completed. Validating...`);
-    const translationError = validate(processedChunk, translatedHtml, `file ${file} chunk ${chunk + 1}`);
+    const translationError = validate(
+      processedChunk,
+      translatedHtml,
+      `file ${file} chunk ${chunk + 1}`,
+    );
     if (translationError) {
       validationError = validationError
         ? `${validationError}\n---\n${translationError}`

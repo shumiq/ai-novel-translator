@@ -105,7 +105,11 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     const humanizedHtml = sanitize(response);
 
     Logger.debug(`Humanization completed. Validating...`);
-    const humanizationError = validate(translatedChunk, humanizedHtml, `file ${file} chunk ${chunk + 1}`);
+    const humanizationError = validate(
+      translatedChunk,
+      humanizedHtml,
+      `file ${file} chunk ${chunk + 1}`,
+    );
     if (humanizationError) {
       validationError = validationError
         ? `${validationError}\n---\n${humanizationError}`
