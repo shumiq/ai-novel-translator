@@ -37,17 +37,25 @@ export async function humanization(file: string) {
   const consistencyCheckedHTML = readFileSync(getSourceFile(file), "utf-8");
 
   let chunk = 0;
+  let chunkOffset = 0;
   const result = [] as string[];
   let validationError: string | null = null;
   while (true) {
+    const originalLines = originalHtml.split("\n");
+    const translatedLines = consistencyCheckedHTML.split("\n");
+    const chunkStart = chunk * appConfig.chunkSize + chunkOffset;
+    const chunkEnd = Math.min(
+      (chunk + 1) * appConfig.chunkSize,
+      originalLines.length,
+    );
+    const originalChunk = originalLines.slice(chunkStart, chunkEnd).join("\n");
+    const translatedChunk = translatedLines
+      .slice(chunkStart, chunkEnd)
+      .join("\n");
     const previousChunk =
       chunk > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
         : previousContent;
-    const translatedChunk = consistencyCheckedHTML
-      .split("\n")
-      .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)
-      .join("\n");
     const request = {
       instruction: `You are a highly skilled Native Thai Novelist and Literary Editor.
 TASK: Humanize and polish the translated Thai text so it reads naturally, beautifully, and emotionally, like a published novel.
@@ -70,6 +78,10 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
 <previous_chapter>
 ${sanitize(previousChunk)}
 </previous_chapter>
+
+<original_text>
+${sanitize(originalChunk)}
+</original_text>
 
 <translated_text>
 ${translatedChunk}
@@ -111,13 +123,21 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       `file ${file} chunk ${chunk + 1}`,
     );
     if (humanizationError) {
-      validationError = validationError
-        ? `${validationError}\n---\n${humanizationError}`
-        : humanizationError;
+      const lineMatch = humanizationError.match(/at line (\d+)/);
+      const failLine = lineMatch?.[1] ? parseInt(lineMatch[1]) : 1;
+      const keepUntil = Math.max(0, failLine - 10);
+      if (keepUntil > 0) {
+        const responseLines = humanizedHtml.split("\n");
+        const keptLines = responseLines.slice(0, keepUntil);
+        result.push(keptLines.join("\n"));
+        chunkOffset = keepUntil;
+      }
+      validationError = humanizationError;
       continue;
     }
     result.push(humanizedHtml);
     chunk++;
+    chunkOffset = 0;
     if (countLines(consistencyCheckedHTML) === countLines(result.join("\n"))) {
       writeFileSync(
         `.temp/final_humanized_${file.replaceAll("/", "_")}`,

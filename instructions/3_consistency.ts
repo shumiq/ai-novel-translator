@@ -33,21 +33,25 @@ export async function consistencyCheck(file: string) {
   const existedWords = extractExistedWords(originalHtml);
 
   let chunk = 0;
+  let chunkOffset = 0;
   const result = [] as string[];
   let validationError: string | null = null;
   while (true) {
+    const originalLines = originalHtml.split("\n");
+    const translatedLines = translatedHtml.split("\n");
+    const chunkStart = chunk * appConfig.chunkSize + chunkOffset;
+    const chunkEnd = Math.min(
+      (chunk + 1) * appConfig.chunkSize,
+      originalLines.length,
+    );
+    const originalChunk = originalLines.slice(chunkStart, chunkEnd).join("\n");
+    const translatedChunk = translatedLines
+      .slice(chunkStart, chunkEnd)
+      .join("\n");
     const previousChunk =
       chunk > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
         : previousContent;
-    const originalChunk = originalHtml
-      .split("\n")
-      .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)
-      .join("\n");
-    const translatedChunk = translatedHtml
-      .split("\n")
-      .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)
-      .join("\n");
     const request = {
       instruction: `You are a meticulous Localization QA Editor for ${novelConfig.originalLanguage}-to-Thai novels.
 TASK: Review the translated text against the original text and the glossary. Focus purely on consistency fixes; leave prose humanization to the next pass.
@@ -113,13 +117,21 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       `file ${file} chunk ${chunk + 1}`,
     );
     if (consistencyError) {
-      validationError = validationError
-        ? `${validationError}\n---\n${consistencyError}`
-        : consistencyError;
+      const lineMatch = consistencyError.match(/at line (\d+)/);
+      const failLine = lineMatch?.[1] ? parseInt(lineMatch[1]) : 1;
+      const keepUntil = Math.max(0, failLine - 10);
+      if (keepUntil > 0) {
+        const responseLines = consistencyCheckedHtml.split("\n");
+        const keptLines = responseLines.slice(0, keepUntil);
+        result.push(keptLines.join("\n"));
+        chunkOffset = keepUntil;
+      }
+      validationError = consistencyError;
       continue;
     }
     result.push(consistencyCheckedHtml);
     chunk++;
+    chunkOffset = 0;
     if (countLines(originalHtml) === countLines(result.join("\n"))) {
       writeFileSync(
         `.temp/consistency_checked_${file.replaceAll("/", "_")}`,

@@ -17,17 +17,21 @@ export async function translation(file: string) {
   const previousContent = getPreviousChapterContent(file);
 
   let chunk = 0;
+  let chunkOffset = 0;
   const result = [] as string[];
   let validationError: string | null = null;
   while (true) {
+    const rawLines = sanitize(rawHTML).split("\n");
+    const chunkStart = chunk * appConfig.chunkSize + chunkOffset;
+    const chunkEnd = Math.min(
+      (chunk + 1) * appConfig.chunkSize,
+      rawLines.length,
+    );
+    const processedChunk = rawLines.slice(chunkStart, chunkEnd).join("\n");
     const previousChunk =
       chunk > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
         : previousContent;
-    const processedChunk = sanitize(rawHTML)
-      .split("\n")
-      .slice(chunk * appConfig.chunkSize, (chunk + 1) * appConfig.chunkSize)
-      .join("\n");
     const request = {
       instruction: `You are an expert ${novelConfig.originalLanguage}-to-Thai literary translator specializing in light novels and web novels.
 TASK: Translate the provided ${novelConfig.originalLanguage} HTML text into Thai.
@@ -90,13 +94,21 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       `file ${file} chunk ${chunk + 1}`,
     );
     if (translationError) {
-      validationError = validationError
-        ? `${validationError}\n---\n${translationError}`
-        : translationError;
+      const lineMatch = translationError.match(/at line (\d+)/);
+      const failLine = lineMatch?.[1] ? parseInt(lineMatch[1]) : 1;
+      const keepUntil = Math.max(0, failLine - 10);
+      if (keepUntil > 0) {
+        const responseLines = translatedHtml.split("\n");
+        const keptLines = responseLines.slice(0, keepUntil);
+        result.push(keptLines.join("\n"));
+        chunkOffset = keepUntil;
+      }
+      validationError = translationError;
       continue;
     }
     result.push(translatedHtml);
     chunk++;
+    chunkOffset = 0;
     if (countLines(rawHTML) === countLines(result.join("\n"))) {
       writeFileSync(
         `.temp/translated_${file.replaceAll("/", "_")}`,
