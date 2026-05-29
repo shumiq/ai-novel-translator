@@ -11,9 +11,9 @@ import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
 import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
-import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { validate } from "../utils/validate";
 
 const getSourceFile = (file: string) => {
   const files = [`.temp/translated_${file.replaceAll("/", "_")}`, file];
@@ -34,6 +34,7 @@ export async function consistencyCheck(file: string) {
 
   let chunk = 0;
   const result = [] as string[];
+  let validationError: string | null = null;
   while (true) {
     const previousChunk =
       chunk > 0
@@ -56,7 +57,8 @@ CONSTRAINTS:
 2. Terminology Enforcement: Strictly enforce terminology from the <existed_words_reference>. Fix any translated terms that do not match the glossary.
 3. Pronoun/Persona & Gender Fixing: Enforce gender-based pronouns (Male: ผม/นาย/ครับ; Female: หนู/ดิฉัน/เธอ/ฉัน/ค่ะ/คะ) or use gender-neutral pronouns (ie. ข้า/เรา/คุณ) for all characters. Apply character-specific 'base_style' and 'negative_constraints' (focusing strictly on vocabulary and particles).
 4. Do not add parentheses in translations unless the original text contains parentheses.
-5. Output ONLY the corrected HTML code. Do not add markdown formatting or explanations.
+5. Keep all HTML escaping intact (e.g., &amp;, &lt;, &gt;). Do not convert them back to symbols.
+6. Output ONLY the corrected HTML code. Do not add markdown formatting or explanations.
 
 Additional Context: 
 ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
@@ -79,7 +81,7 @@ ${translatedChunk}
 ${JSON.stringify(existedWords)}
 </existed_words_reference>
 
-Instruction: Perform a consistency fix on the <translated_text> based on the reference and original text. Use the previous_chapter for context on character continuity and tone. Ensure strict HTML structural integrity. Output ONLY the corrected HTML with exactly ${countLines(translatedChunk)} lines.`,
+${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instruction: Perform a consistency fix on the <translated_text> based on the reference and original text. Use the previous_chapter for context on character continuity and tone. Ensure strict HTML structural integrity. Output ONLY the corrected HTML with exactly ${countLines(translatedChunk)} lines.`,
     };
     writeFileSync(
       `.temp/request_consistency_checked_${file.replaceAll("/", "_")}.json`,
@@ -104,22 +106,12 @@ Instruction: Perform a consistency fix on the <translated_text> based on the ref
 
     const consistencyCheckedHtml = sanitize(response);
 
-    Logger.debug(`Consistency check completed. Validating line counts...`);
-    if (countLines(originalChunk) !== countLines(consistencyCheckedHtml)) {
-      Logger.error(`Line count mismatch for file ${file} chunk ${chunk + 1}`);
-      Logger.error(
-        `output text (first 10 lines): ${consistencyCheckedHtml.split("\n").slice(0, 10).join("\n")}`,
-      );
-      continue;
-    }
-    Logger.debug(`Line count validation passed. Validating Thai language...`);
-    if (!isThai(consistencyCheckedHtml)) {
-      Logger.error(
-        `Consistency check output does not appear to be in Thai for file ${file} chunk ${chunk + 1}`,
-      );
-      Logger.error(
-        `output text (first 10 lines): ${consistencyCheckedHtml.split("\n").slice(0, 10).join("\n")}`,
-      );
+    Logger.debug(`Consistency check completed. Validating...`);
+    const consistencyError = validate(originalChunk, consistencyCheckedHtml, `file ${file} chunk ${chunk + 1}`);
+    if (consistencyError) {
+      validationError = validationError
+        ? `${validationError}\n---\n${consistencyError}`
+        : consistencyError;
       continue;
     }
     result.push(consistencyCheckedHtml);

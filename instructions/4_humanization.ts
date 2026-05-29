@@ -11,9 +11,9 @@ import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
 import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
-import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { validate } from "../utils/validate";
 
 const getSourceFile = (file: string) => {
   const files = [
@@ -38,6 +38,7 @@ export async function humanization(file: string) {
 
   let chunk = 0;
   const result = [] as string[];
+  let validationError: string | null = null;
   while (true) {
     const previousChunk =
       chunk > 0
@@ -58,7 +59,8 @@ CONSTRAINTS:
 4. Dialogue & Particle Optimization: Ensure dialogue flows like a real Thai conversation. Reduce repetitive particles (e.g., ending every single sentence with "ครับ/ค่ะ/จ๊ะ") and simplify excessive Royal Vocabulary (คำราชาศัพท์ไทย) for modern readability.
 5. Fix Word Choice: Replace unnatural word choices with idiomatic Thai expressions while keeping the <existed_words_reference> terminology intact.
 6. No Parentheses: Do not add parentheses in translations unless the original text contains parentheses.
-7. Output ONLY the polished HTML code. No markdown tags, no conversational filler.
+7. Keep all HTML escaping intact (e.g., &amp;, &lt;, &gt;). Do not convert them back to symbols.
+8. Output ONLY the polished HTML code. No markdown tags, no conversational filler.
 
 Additional Context: 
 ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
@@ -77,7 +79,7 @@ ${translatedChunk}
 ${JSON.stringify(existedWords)}
 </existed_words_reference>
 
-Instruction: Rewrite and humanize the <translated_text> for superior Thai literary flow while maintaining flawless structural integrity. Use the previous_chapter to maintain narrative continuity and character voice consistency. Output ONLY the finalized HTML with exactly ${countLines(translatedChunk)} lines.`,
+${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instruction: Rewrite and humanize the <translated_text> for superior Thai literary flow while maintaining flawless structural integrity. Use the previous_chapter to maintain narrative continuity and character voice consistency. Output ONLY the finalized HTML with exactly ${countLines(translatedChunk)} lines.`,
     };
     writeFileSync(
       `.temp/request_final_humanized_${file.replaceAll("/", "_")}.json`,
@@ -102,22 +104,12 @@ Instruction: Rewrite and humanize the <translated_text> for superior Thai litera
 
     const humanizedHtml = sanitize(response);
 
-    Logger.debug(`Humanization completed. Validating line counts...`);
-    if (countLines(translatedChunk) !== countLines(humanizedHtml)) {
-      Logger.error(`Line count mismatch for file ${file} chunk ${chunk + 1}`);
-      Logger.error(
-        `output text (first 10 lines): ${humanizedHtml.split("\n").slice(0, 10).join("\n")}`,
-      );
-      continue;
-    }
-    Logger.debug(`Line count validation passed. Validating Thai language...`);
-    if (!isThai(humanizedHtml)) {
-      Logger.error(
-        `Humanized output does not appear to be in Thai for file ${file} chunk ${chunk + 1}`,
-      );
-      Logger.error(
-        `output text (first 10 lines): ${humanizedHtml.split("\n").slice(0, 10).join("\n")}`,
-      );
+    Logger.debug(`Humanization completed. Validating...`);
+    const humanizationError = validate(translatedChunk, humanizedHtml, `file ${file} chunk ${chunk + 1}`);
+    if (humanizationError) {
+      validationError = validationError
+        ? `${validationError}\n---\n${humanizationError}`
+        : humanizationError;
       continue;
     }
     result.push(humanizedHtml);

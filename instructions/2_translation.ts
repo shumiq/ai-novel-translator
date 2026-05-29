@@ -5,9 +5,9 @@ import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
 import { getPreviousChapterContent } from "../utils/extract";
 import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
-import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { validate } from "../utils/validate";
 
 export async function translation(file: string) {
   Logger.info(`Translating: ${file}`);
@@ -18,6 +18,7 @@ export async function translation(file: string) {
 
   let chunk = 0;
   const result = [] as string[];
+  let validationError: string | null = null;
   while (true) {
     const previousChunk =
       chunk > 0
@@ -37,7 +38,8 @@ CONSTRAINTS:
 3. Strict Gender Pronouns: Must follow gender-based pronouns strictly (Male: ผม/นาย/ครับ; Female: หนู/ดิฉัน/เธอ/ฉัน/ค่ะ/คะ) or use gender-neutral pronouns (ie. ข้า/เรา/คุณ). Use context to determine the speaker.
 4. Terminology: Use the <existed_words_reference> strictly for names, places, and artifacts.
 5. No Parentheses: Do not add parentheses in translations unless the original text contains parentheses.
-6. Output ONLY the translated HTML code. Do not add markdown blocks (\`\`\`), greetings, or explanations.
+6. Keep all HTML escaping intact (e.g., &amp;, &lt;, &gt;). Do not convert them back to symbols.
+7. Output ONLY the translated HTML code. Do not add markdown blocks (\`\`\`), greetings, or explanations.
 
 Additional Context: 
 ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
@@ -56,7 +58,7 @@ ${processedChunk}
 ${JSON.stringify(existedWords)}
 </existed_words_reference>
 
-Instruction: Translate the <original_text> to Thai line-by-line following the 1:1 semantic and structural constraints. Use the previous_chapter for context on ongoing scenes and character voices. Output ONLY valid HTML with exactly ${countLines(processedChunk)} lines.`,
+${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instruction: Translate the <original_text> to Thai line-by-line following the 1:1 semantic and structural constraints. Use the previous_chapter for context on ongoing scenes and character voices. Output ONLY valid HTML with exactly ${countLines(processedChunk)} lines.`,
     };
     writeFileSync(
       `.temp/request_translated_${file.replaceAll("/", "_")}.json`,
@@ -81,22 +83,12 @@ Instruction: Translate the <original_text> to Thai line-by-line following the 1:
 
     const translatedHtml = sanitize(response);
 
-    Logger.debug(`Translation completed. Validating line counts...`);
-    if (countLines(processedChunk) !== countLines(translatedHtml)) {
-      Logger.error(`Line count mismatch for file ${file} chunk ${chunk + 1}`);
-      Logger.error(
-        `output text (first 10 lines): ${translatedHtml.split("\n").slice(0, 10).join("\n")}`,
-      );
-      continue;
-    }
-    Logger.debug(`Line count validation passed. Validating Thai language...`);
-    if (!isThai(translatedHtml)) {
-      Logger.error(
-        `Translation does not appear to be in Thai for file ${file} chunk ${chunk + 1}`,
-      );
-      Logger.error(
-        `output text (first 10 lines): ${translatedHtml.split("\n").slice(0, 10).join("\n")}`,
-      );
+    Logger.debug(`Translation completed. Validating...`);
+    const translationError = validate(processedChunk, translatedHtml, `file ${file} chunk ${chunk + 1}`);
+    if (translationError) {
+      validationError = validationError
+        ? `${validationError}\n---\n${translationError}`
+        : translationError;
       continue;
     }
     result.push(translatedHtml);

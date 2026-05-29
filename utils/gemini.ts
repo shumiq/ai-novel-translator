@@ -190,12 +190,13 @@ export async function geminiCliRequest({
   instruction,
   prompt,
   body: additionalBody,
-  runner = appConfig.fallbackAgent,
+  runner = "api-fallback-handler",
 }: Parameters<typeof geminiRequest>[0] & { runner?: string }) {
   writeFileSync(
     ".temp/INSTRUCTION.md",
     [
-      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. (always overwrite)",
+      "You are operating in api-fallback-handler mode.",
+      "CRITICAL: Do not output the result in the chat. Save the final output directly to the file path: .temp/output.txt (always overwrite).",
       "",
       ...instruction.split("\n").map((line) => line.trim()),
     ].join("\n"),
@@ -203,7 +204,8 @@ export async function geminiCliRequest({
   writeFileSync(
     ".temp/PROMPT.md",
     [
-      "IMPORTANT: Do not output the translation in the chat. Save the final output directly to the file path: .temp/output.txt. (always overwrite)",
+      "You are operating in api-fallback-handler mode.",
+      "CRITICAL: Do not output the result in the chat. Save the final output directly to the file path: .temp/output.txt (always overwrite).",
       "",
       ...prompt.split("\n").map((line) => line.trim()),
       "",
@@ -219,7 +221,7 @@ export async function geminiCliRequest({
       const prompt =
         runner === "gemini"
           ? `agy --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt"`
-          : `opencode run "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt" --model google/${appConfig.model} --thinking true --variant med --agent api-fallback-handler`;
+          : `opencode run "Act as api-fallback-handler agent. Follow instruction in .temp/PROMPT.md. Save your output in .temp/output.txt" --model google/${appConfig.model} --thinking true --variant med --agent api-fallback-handler`;
       execSync(prompt, {
         stdio: "inherit",
         timeout: 1000 * 60 * 10,
