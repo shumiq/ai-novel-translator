@@ -6,7 +6,7 @@ import { Logger } from "./logger";
 export function isAlphabet(c: string): boolean {
   const char = c[0];
   if (!char) return false;
-  return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}\p{Script=Thai}\p{Script=Latin}]/u.test(
+  return /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}\p{Script=Thai}\p{Script=Latin}]0123456789/u.test(
     char,
   );
 }
