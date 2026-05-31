@@ -34,8 +34,9 @@ export async function consistencyCheck(file: string) {
 
   let chunk = 0;
   let chunkOffset = 0;
-  const result = [] as string[];
+  let result = [] as string[];
   let validationError: string | null = null;
+  let validationRetries = 0;
   while (true) {
     const originalLines = originalHtml.split("\n");
     const translatedLines = translatedHtml.split("\n");
@@ -48,6 +49,17 @@ export async function consistencyCheck(file: string) {
     const translatedChunk = translatedLines
       .slice(chunkStart, chunkEnd)
       .join("\n");
+    if (translatedChunk.length === 0 || countLines(translatedChunk) === 0) {
+      Logger.info(
+        `No more content to consistency check. Ending process for ${file}. Restarting from the beginning of the file to check for any missed content.`,
+      );
+      chunk = 0;
+      chunkOffset = 0;
+      validationError = null;
+      validationRetries = 0;
+      result = [];
+      continue;
+    }
     const previousChunk =
       chunk > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
@@ -117,6 +129,16 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       `file ${file} chunk ${chunk + 1}`,
     );
     if (consistencyError) {
+      validationRetries++;
+      if (validationRetries > 5) {
+        Logger.warn(
+          `Validation failed 5 times for ${file}. Skipping this file.`,
+        );
+        appendFileSync("skip.txt", `${file}\n`);
+        throw new Error(
+          `Validation failed for ${file} after ${validationRetries} retries`,
+        );
+      }
       const lineMatch = consistencyError.match(/at line (\d+)/);
       const failLine = lineMatch?.[1] ? parseInt(lineMatch[1]) : 1;
       const keepUntil = Math.max(0, failLine - 10);

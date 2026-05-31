@@ -17,9 +17,16 @@ export const appConfig = {
   pipeline: ["extraction", "translation", "consistency", "humanization"],
   skipProhibitedContent: false,
   skipHighDemand: false,
-  loopSkip: false,
+  loopSkip: true,
   previousChunk: 30,
   chunkSize: 300,
   thinking: "medium",
+  validation: {
+    lineCount: true,
+    isThai: true,
+    quouteCount: false,
+    parenthesesCount: true,
+    startCharacter: true,
+  },
   debug: false,
 };

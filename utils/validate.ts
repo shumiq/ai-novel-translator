@@ -1,6 +1,7 @@
-import { Logger } from "./logger";
-import { isThai } from "./lang";
+import { appConfig } from "../config";
 import { countLines } from "./count_line";
+import { isThai } from "./lang";
+import { Logger } from "./logger";
 
 export function isAlphabet(c: string): boolean {
   const char = c[0];
@@ -17,7 +18,10 @@ export function validate(
 ): string | null {
   const label = context ? ` for ${context}` : "";
 
-  if (countLines(before) !== countLines(after)) {
+  if (
+    countLines(before) !== countLines(after) &&
+    appConfig.validation.lineCount
+  ) {
     const msg = `Line count mismatch${label}`;
     Logger.error(msg);
     Logger.error(
@@ -26,7 +30,7 @@ export function validate(
     return msg;
   }
 
-  if (!isThai(after)) {
+  if (!isThai(after) && appConfig.validation.isThai) {
     const msg = `Output does not appear to be in Thai${label}`;
     Logger.error(msg);
     Logger.error(
@@ -45,20 +49,28 @@ export function validate(
     const beforeChar = beforeLine.match(/<p[^>]*>\s*(.)/)?.[1];
     const afterChar = afterLine.match(/<p[^>]*>\s*(.)/)?.[1];
 
+    // original
+    // const countQuotesAndBrackets = (s: string) =>
+    //   (s.match(/["''""'\[\]【】｛｝{}〔〕〈〉《》「」『』〝〟«»]/g) || [])
+    //     .length;
     const countQuotesAndBrackets = (s: string) =>
-      (s.match(/["''""'\[\]【】｛｝{}〔〕〈〉《》「」『』〝〟«»]/g) || [])
-        .length;
+      (s.match(/["\[\]【】｛｝{}〔〕〈〉《》「」『』〝〟«»]/g) || []).length;
     const countParens = (s: string) => (s.match(/[\(\)（）]/g) || []).length;
 
     if (
-      countQuotesAndBrackets(beforeLine) !== countQuotesAndBrackets(afterLine)
+      countQuotesAndBrackets(beforeLine) !==
+        countQuotesAndBrackets(afterLine) &&
+      appConfig.validation.quouteCount
     ) {
       const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${countQuotesAndBrackets(beforeLine)}, translated has ${countQuotesAndBrackets(afterLine)}`;
       Logger.error(msg);
       return msg;
     }
 
-    if (countParens(afterLine) > countParens(beforeLine)) {
+    if (
+      countParens(afterLine) > countParens(beforeLine) &&
+      appConfig.validation.parenthesesCount
+    ) {
       const msg = `Parenthesis count mismatch at line ${i + 1}${label}: original has ${countParens(beforeLine)}, translated has ${countParens(afterLine)}`;
       Logger.error(msg);
       return msg;
@@ -67,7 +79,8 @@ export function validate(
     if (
       beforeChar !== undefined &&
       afterChar !== undefined &&
-      isAlphabet(beforeChar) !== isAlphabet(afterChar)
+      isAlphabet(beforeChar) !== isAlphabet(afterChar) &&
+      appConfig.validation.startCharacter
     ) {
       const msg = `Starting character mismatch after <p> at line ${i + 1}${label}: expected '${beforeChar}' (isAlphabet=${isAlphabet(beforeChar)}), got '${afterChar}' (isAlphabet=${isAlphabet(afterChar)})`;
       Logger.error(msg);

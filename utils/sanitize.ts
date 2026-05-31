@@ -97,7 +97,6 @@ export const sanitize = (
                   .replaceAll("…", "...")
                   .replaceAll("‥", "...")
                   .replaceAll("・", " ")
-                  .replaceAll("※", "")
                   .replaceAll("·", " ")
                   .replaceAll(/[\u200B\uFEFF]/g, "")
                   .replaceAll(/[–―—]/g, "—")
