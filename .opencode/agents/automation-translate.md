@@ -18,27 +18,37 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 - Run `bun prepare.ts` to:
   - Create directories (`./json`, `./books`, `.temp`)
   - Copy JSON files from source paths to `./json/`
-  - Set up `novel_data.json` dictionary
+  - Set up `novel_data.json` dictionary (copy from `dictionaryPath` or create empty)
   - Convert JSON chapters to HTML in `./books/`
+  - Create `.temp/skip.txt` and `.temp/queue.txt` if missing
 
-### 2. Translation Pipeline (via runner.ts)
+### 2. Queue Initialization
 
-- Run `bun runner.ts` to execute the 4-pass pipeline on each non-Thai HTML file:
-  - **Pass 1 — Extraction:** Extracts character names, terminology from source and updates dictionary
-  - **Pass 2 — Translation:** Translates Japanese HTML to Thai in chunks
+- Run `bun init_queue.ts` to:
+  - Scan all HTML files in `books/` for non-Thai content
+  - Build a processing queue in `.temp/queue.txt`
+  - Resume from existing queue if one exists (supports restart)
+
+### 3. Translation Pipeline (via runner.ts)
+
+- Run `bun runner.ts` to execute the 4-pass pipeline on each file from the queue:
+  - **Pass 1 — Extraction:** Extracts character names, terminology from source and updates dictionary using structured JSON schema
+  - **Pass 2 — Translation:** Translates Japanese HTML to Thai in chunks with 1:1 line correspondence
   - **Pass 3 — Consistency:** Enforces dictionary terminology and character voice
   - **Pass 4 — Humanization:** Polishes Thai output for natural readability
-- Each pass validates line counts and Thai presence; failed chunks are retried automatically
+- Each pass validates line counts, Thai presence, bracket matching, and parentheses count; failed chunks are retried automatically (up to 5 retries)
 - The runner processes up to 10 files per run (configurable in `config.ts`)
+- Successful files are committed to git automatically
 
-### 3. Error Recovery
+### 4. Error Recovery
 
-- If `runner.ts` fails on a file, it adds the filename to `skip.txt`
-- Check `skip.txt` for failed files after each run
-- Investigate and fix issues, then remove the file from `skip.txt` and re-run
-- The pipeline loops automatically in `start.bat`; as this agent you should handle retries manually
+- If a file fails validation after 5 retries, the runner adds it to `.temp/skip.txt` and continues
+- If the queue is non-empty after processing, the runner exits with code 1 (to trigger restart via `start.bat`)
+- On restart, `init_queue.ts` prepends skipped files back to the queue head if `appConfig.loopSkip` is enabled
+- Monitor `.temp/queue.txt` (pending files) and `.temp/skip.txt` (failed files) between runs
+- Investigate and fix issues, then re-run; the pipeline loops automatically in `start.bat`
 
-### 4. Finalization
+### 5. Finalization
 
 - Run `bun finalize.ts` to:
   - Convert translated Thai HTML back to JSON chapters
@@ -52,7 +62,8 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 - `appConfig.pipeline` — Which passes to run (default: extraction, translation, consistency, humanization)
 - `appConfig.chunkSize` — Lines per chunk sent to AI (default: 300)
 - `appConfig.previousChunk` — Lines of context from previous chunk (default: 30)
-- `skip.txt` — Newline-separated list of files to skip during pipeline runs
+- `.temp/queue.txt` — Newline-separated list of files pending processing
+- `.temp/skip.txt` — Newline-separated list of files to skip during pipeline runs
 
 ## Important Notes
 

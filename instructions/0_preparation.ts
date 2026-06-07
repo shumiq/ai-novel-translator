@@ -37,8 +37,14 @@ export async function preparation() {
         writeFileSync("./novel_data.json", "{}");
       }
     }
-    if (!existsSync("./skip.txt")) {
-      writeFileSync("./skip.txt", "");
+    if (!existsSync("./.temp")) {
+      mkdirSync("./.temp");
+    }
+    if (!existsSync("./.temp/skip.txt")) {
+      writeFileSync("./.temp/skip.txt", "");
+    }
+    if (!existsSync("./.temp/queue.txt")) {
+      writeFileSync("./.temp/queue.txt", "");
     }
   }
   // #2. copy all json from config.outputPath to json folder

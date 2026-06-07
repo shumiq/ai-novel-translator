@@ -1,6 +1,6 @@
 # Agent Roles
 
-This project defines 4 agent roles for different use cases. Each role has a dedicated agent definition in `.opencode/agents/`.
+This project defines 5 agent roles for different use cases. Each role has a dedicated agent definition in `.opencode/agents/`.
 
 ---
 
@@ -37,9 +37,10 @@ This project defines 4 agent roles for different use cases. Each role has a dedi
 
 1. Check project configuration (`config.ts`)
 2. Run `bun prepare.ts` to set up directories and convert JSON to HTML
-3. Run `bun runner.ts` to execute the 4-pass AI pipeline (extraction → translation → consistency → humanization)
-4. Handle retries and `skip.txt` for error recovery
-5. Run `bun finalize.ts` to convert Thai HTML back to JSON
+3. Run `bun init_queue.ts` to build a processing queue from non-Thai files
+4. Run `bun runner.ts` to execute the 4-pass AI pipeline (extraction → translation → consistency → humanization)
+5. Handle retries via `queue.txt` and `skip.txt` for error recovery
+6. Run `bun finalize.ts` to convert Thai HTML back to JSON
 
 ---
 

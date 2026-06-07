@@ -1,11 +1,10 @@
 import { execSync } from "child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { appConfig } from "./config";
 import { extraction } from "./instructions/1_extraction";
 import { translation } from "./instructions/2_translation";
 import { consistencyCheck } from "./instructions/3_consistency";
 import { humanization } from "./instructions/4_humanization";
-import { extractNonThai } from "./utils/extract";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
 
@@ -22,24 +21,52 @@ const getFinalFile = (file: string) => {
   return file;
 };
 
-export const runnerAPI = async () => {
-  const files = extractNonThai();
-  const skips = readFileSync("skip.txt", "utf-8");
-  let count = 0;
-  const LIMIT = 10;
-  for (const file of files) {
-    if (skips.includes(file)) {
-      Logger.info(`Skipping: ${file}`);
-      continue;
-    }
-    if (count++ >= LIMIT) {
-      if (appConfig.loopSkip) writeFileSync("skip.txt", "");
+const startMemoryWatcher = () => {
+  const limitBytes = (appConfig.memoryLimitMB || 0) * 1024 * 1024;
+  if (!limitBytes) return;
+
+  const id = setInterval(() => {
+    const rss = process.memoryUsage().rss;
+    if (rss > limitBytes) {
+      Logger.warn(
+        `Memory limit exceeded (${(rss / 1024 / 1024).toFixed(0)} MB > ${appConfig.memoryLimitMB} MB). Exiting to let start.bat restart.`,
+      );
+      clearInterval(id);
       process.exit(1);
     }
+  }, 5000).unref();
+};
+
+const getNextFile = (): string | null => {
+  if (!existsSync(".temp/queue.txt")) return null;
+  const content = readFileSync(".temp/queue.txt", "utf-8").trim();
+  if (!content) return null;
+  return content.split("\n")[0] || null;
+};
+
+const removeFirstFromQueue = () => {
+  const content = readFileSync(".temp/queue.txt", "utf-8").trim();
+  const lines = content.split("\n");
+  lines.shift();
+  writeFileSync(".temp/queue.txt", lines.join("\n") + "\n", "utf-8");
+};
+
+export const runnerAPI = async () => {
+  startMemoryWatcher();
+  let count = 0;
+  const LIMIT = 10;
+
+  while (true) {
+    const file = getNextFile();
+    if (!file) break;
+
+    if (count++ >= LIMIT) {
+      if (appConfig.loopSkip) writeFileSync(".temp/skip.txt", "");
+      process.exit(1);
+    }
+
     try {
-      // Loop to ensure we only proceed to the next file after successful passes of the current file
       while (true) {
-        // PASS-1: Extract high-impact terms using the API and update the dictionary
         if (
           appConfig.pipeline.includes("extraction") &&
           !existsSync(`.temp/extraction_${file.replaceAll("/", "_")}`)
@@ -47,7 +74,6 @@ export const runnerAPI = async () => {
           await extraction(file);
         }
 
-        // PASS-2: Translate the extracted terms using the API and update the dictionary with translations
         if (
           appConfig.pipeline.includes("translation") &&
           !existsSync(`.temp/translated_${file.replaceAll("/", "_")}`)
@@ -55,7 +81,6 @@ export const runnerAPI = async () => {
           await translation(file);
         }
 
-        // PASS-3: Consistency check - Ensure the translated file has matched translated terms from the dictionary.
         if (
           appConfig.pipeline.includes("consistency") &&
           !existsSync(`.temp/consistency_checked_${file.replaceAll("/", "_")}`)
@@ -63,19 +88,16 @@ export const runnerAPI = async () => {
           await consistencyCheck(file);
         }
 
-        // PASS-4: Humanize the translated text
         if (appConfig.pipeline.includes("humanization")) {
           await humanization(file);
         }
 
-        // Final check to ensure the output file is in Thai before proceeding to the next file
         const finalOutputFile = getFinalFile(file);
 
         if (
           existsSync(finalOutputFile) &&
           isThai(readFileSync(finalOutputFile, "utf-8"))
         ) {
-          // Success! Overwrite the real file and clean up.
           writeFileSync(file, readFileSync(finalOutputFile, "utf-8"));
 
           if (existsSync(`.temp/extraction_${file.replaceAll("/", "_")}`))
@@ -92,12 +114,12 @@ export const runnerAPI = async () => {
 
           execSync(`git add "${file}"`);
 
-          break; // Moves to the next file
+          removeFirstFromQueue();
+          break;
         } else {
           Logger.error(
             `Final output is not completely in Thai. Restarting pipeline for ${file}`,
           );
-          // Clean up temps to start completely fresh for Pass 2
           if (existsSync(`.temp/translated_${file.replaceAll("/", "_")}`))
             rmSync(`.temp/translated_${file.replaceAll("/", "_")}`);
           if (
@@ -109,14 +131,16 @@ export const runnerAPI = async () => {
       }
     } catch (e) {
       Logger.warn(`Found error on ${file}. Skipping this file.`);
+      removeFirstFromQueue();
       continue;
     }
   }
-  if (appConfig.loopSkip) {
-    if (readFileSync("skip.txt", "utf-8").trim() === "") process.exit(0);
-    writeFileSync("skip.txt", "");
+
+  if (
+    readFileSync(".temp/queue.txt", "utf-8").trim() ||
+    readFileSync(".temp/skip.txt", "utf-8").trim()
+  ) {
     process.exit(1);
-  } else {
-    process.exit(0);
   }
+  process.exit(0);
 };

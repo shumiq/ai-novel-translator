@@ -112,12 +112,12 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
           Logger.warn(
             `Prohibited content detected in file ${file}. Skipping this file.`,
           );
-          appendFileSync("skip.txt", `${file}\n`);
+          appendFileSync(".temp/skip.txt", `${file}\n`);
         } else if (e instanceof HighDemandError) {
           Logger.warn(
             `High demand detected in file ${file}. Skipping this file.`,
           );
-          appendFileSync("skip.txt", `${file}\n`);
+          appendFileSync(".temp/skip.txt", `${file}\n`);
         } else {
           Logger.error(e);
         }

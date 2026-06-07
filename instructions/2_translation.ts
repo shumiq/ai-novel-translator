@@ -85,12 +85,12 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
         Logger.warn(
           `Prohibited content detected in file ${file}. Skipping this file.`,
         );
-        appendFileSync("skip.txt", `${file}\n`);
+        appendFileSync(".temp/skip.txt", `${file}\n`);
       } else if (e instanceof HighDemandError) {
         Logger.warn(
           `High demand detected in file ${file}. Skipping this file.`,
         );
-        appendFileSync("skip.txt", `${file}\n`);
+        appendFileSync(".temp/skip.txt", `${file}\n`);
       } else {
         Logger.error(e);
       }
@@ -111,7 +111,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
         Logger.warn(
           `Validation failed 5 times for ${file}. Skipping this file.`,
         );
-        appendFileSync("skip.txt", `${file}\n`);
+        appendFileSync(".temp/skip.txt", `${file}\n`);
         throw new Error(
           `Validation failed for ${file} after ${validationRetries} retries`,
         );

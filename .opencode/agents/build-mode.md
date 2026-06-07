@@ -16,18 +16,30 @@ You are the build mode agent for the ai-novel-translator project. Your job is to
 - **Error Handling:** Throw typed errors; use existing patterns from `utils/gemini.ts` (GeminiError, RateLimitError, QuotaExceededError)
 - **Configuration:** Centralized in `config.ts` — read/write `novelConfig` and `appConfig`
 - **Logging:** Use `utils/logger.ts` (debug, info, warn, error, progress functions)
-- **Validation:** Use `utils/validate.ts` for line count, Thai language, and bracket matching checks
-- **AI Requests:** Route through `utils/ai.ts` which dispatches to Gemini API or CLI fallback
+- **Validation:** Use `utils/validate.ts` for line count, Thai language, bracket/parenthesis matching, and starting character checks
+- **AI Requests:** Route through `utils/ai.ts` which dispatches to Gemini API (`utils/gemini.ts`) or CLI fallback
 - **Language Detection:** Use `utils/lang.ts` (isThai, isJapanese, isEnglish)
+- **File Queue:** `.temp/queue.txt` — Newline-separated list of files pending processing
+- **Skip List:** `.temp/skip.txt` — Files that failed validation and were skipped
+- **File Cache:** `.temp/novel_files.json` — Cached list of all HTML files
 
 ## Project Structure
 
 ```
 Root scripts:
-  prepare.ts         → Set up directories, convert JSON to HTML
-  runner.ts          → Pipeline entry point (creates .temp/, loads config)
-  runner_api.ts      → Core engine: 4-pass pipeline orchestration
-  finalize.ts        → Convert Thai HTML back to JSON
+  prepare.ts              → Set up directories, convert JSON to HTML
+  init_queue.ts           → Build processing queue from non-Thai files
+  runner.ts               → Pipeline entry point (creates .temp/, loads config)
+  runner_api.ts           → Core engine: 4-pass pipeline orchestration
+  finalize.ts             → Convert Thai HTML back to JSON
+  merge_multiline_speech_jp.ts → Merge multi-line Japanese speech in HTML files
+  translate_leftover_english.ts → Translate leftover English to Thai via agent
+  translate_leftover_japanese.ts → Translate leftover Japanese to Thai via agent
+  sanitize_all.ts         → Sanitize all translated HTML files
+  sanitize_epub.ts        → Sanitize EPUB-generated HTML files
+  check_quota.ts          → Check Gemini API quota across accounts
+  update_branches.ts      → Rebase git branches and fetch new web chapters
+  validate_dictionary.ts  → Check for Japanese entries in dictionary
 
 instructions/        → Pipeline step implementations (0 through 99)
   0_preparation.ts   → Directory/JSON/HTML conversion
@@ -51,7 +63,8 @@ utils/               → Shared utilities
    - `bun run prettier --write .` — Format all files with Prettier
 4. Verify changes work with the existing pipeline:
    - `bun prepare.ts` to test preparation
-   - `bun runner.ts` to test the pipeline (will process pending files)
+   - `bun init_queue.ts` to build/refresh the processing queue
+   - `bun runner.ts` to test the pipeline (will process pending files from queue)
    - `bun finalize.ts` to test finalization
 
 ## Important Rules

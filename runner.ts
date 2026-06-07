@@ -7,8 +7,8 @@ if (!existsSync(".temp")) {
 if (!existsSync("./novel_data.json")) {
   writeFileSync("./novel_data.json", "{}");
 }
-if (!existsSync("./skip.txt")) {
-  writeFileSync("./skip.txt", "");
+if (!existsSync("./.temp/skip.txt")) {
+  writeFileSync("./.temp/skip.txt", "");
 }
 
 await runnerAPI();
