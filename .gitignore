@@ -41,7 +41,3 @@ books/**/*
 !books/**/*.xhtml
 !books/**/*.opf
 .antigravitycli
-
-queue.txt
-skip.txt
-novel_files.json
