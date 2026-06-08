@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { appConfig } from "./config";
+import { appConfig, novelConfig } from "./config";
 import { extraction } from "./instructions/1_extraction";
 import { translation } from "./instructions/2_translation";
 import { consistencyCheck } from "./instructions/3_consistency";
@@ -21,22 +21,6 @@ const getFinalFile = (file: string) => {
   return file;
 };
 
-const startMemoryWatcher = () => {
-  const limitBytes = (appConfig.memoryLimitMB || 0) * 1024 * 1024;
-  if (!limitBytes) return;
-
-  const id = setInterval(() => {
-    const rss = process.memoryUsage().rss;
-    if (rss > limitBytes) {
-      Logger.warn(
-        `Memory limit exceeded (${(rss / 1024 / 1024).toFixed(0)} MB > ${appConfig.memoryLimitMB} MB). Exiting to let start.bat restart.`,
-      );
-      clearInterval(id);
-      process.exit(1);
-    }
-  }, 5000).unref();
-};
-
 const getNextFile = (): string | null => {
   if (!existsSync(".temp/queue.txt")) return null;
   const content = readFileSync(".temp/queue.txt", "utf-8").trim();
@@ -52,7 +36,6 @@ const removeFirstFromQueue = () => {
 };
 
 export const runnerAPI = async () => {
-  startMemoryWatcher();
   let count = 0;
   const LIMIT = 10;
 
@@ -141,6 +124,11 @@ export const runnerAPI = async () => {
     readFileSync(".temp/skip.txt", "utf-8").trim()
   ) {
     process.exit(1);
+  }
+  if (novelConfig.originalLanguage === "Japanese") {
+    execSync(`bun translate_leftover_japanese.ts`);
+  } else {
+    execSync(`bun translate_leftover_english.ts`);
   }
   process.exit(0);
 };
