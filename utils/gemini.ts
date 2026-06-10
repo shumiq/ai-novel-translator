@@ -3,7 +3,7 @@ import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
 import { Logger } from "./logger";
 
-const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model}:generateContent`;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model.api}:generateContent`;
 
 function getApiKey() {
   if (appConfig.apiKeys.length === 0) {
@@ -221,7 +221,7 @@ export async function geminiCliRequest({
       const prompt =
         runner === "gemini"
           ? `agy --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt"`
-          : `opencode run "Act as api-fallback-handler agent. Follow instruction in .temp/PROMPT.md. Save your output in .temp/output.txt" --model google/${appConfig.model} --thinking true --variant med --agent api-fallback-handler`;
+          : `opencode run "Act as api-fallback-handler agent. Follow instruction in .temp/PROMPT.md. Save your output in .temp/output.txt" --model google/${appConfig.model.agent} --thinking true --variant med --agent api-fallback-handler`;
       execSync(prompt, {
         stdio: "inherit",
         timeout: 1000 * 60 * 10,
