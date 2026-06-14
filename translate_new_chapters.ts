@@ -1,12 +1,13 @@
 import { execSync } from "child_process";
-import { Logger } from "./utils/logger";
+import { rmSync } from "fs";
 import {
-  getBranches,
   cleanGitState,
   execShell,
-  hasStagedChanges,
+  getBranches,
   getLastCommitMessage,
+  hasStagedChanges,
 } from "./utils/git";
+import { Logger } from "./utils/logger";
 
 const BRANCH_PREFIX = "web/*";
 const SELF_SCRIPT = "translate_new_chapters.ts";
@@ -53,6 +54,7 @@ async function main(): Promise<void> {
       cleanGitState();
       continue;
     }
+    rmSync(".temp", { recursive: true, force: true });
 
     Logger.info(
       `Translation complete for ${branch}. Squashing changes into "start" commit...`,
@@ -60,7 +62,7 @@ async function main(): Promise<void> {
 
     await execShell("git reset --soft HEAD~1");
 
-    await execShell('git rm --cached -r --ignore-unmatch .temp');
+    await execShell("git rm --cached -r --ignore-unmatch .temp");
     await execShell(`git add --all -- ":!${SELF_SCRIPT}" ":!.temp"`);
 
     if (!(await hasStagedChanges())) {

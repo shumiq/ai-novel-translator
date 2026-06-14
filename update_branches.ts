@@ -1,12 +1,13 @@
-import { Logger } from "./utils/logger";
+import { rmSync } from "fs";
 import {
-  getBranches,
   cleanGitState,
   execShell,
+  getBranches,
   hasChanges,
   hasStagedChanges,
   intFromShell,
 } from "./utils/git";
+import { Logger } from "./utils/logger";
 
 const BRANCH_PREFIXES = ["web/*", "epub/*"] as const;
 
@@ -15,15 +16,15 @@ async function isBehindMain(branch: string): Promise<boolean> {
 }
 
 async function isCommitterDateOlderThan24h(branch: string): Promise<boolean> {
-  const committerTs = await intFromShell(
-    `git log -1 --format=%ct "${branch}"`,
-  );
+  const committerTs = await intFromShell(`git log -1 --format=%ct "${branch}"`);
   return Math.floor(Date.now() / 1000) - committerTs > 86400;
 }
 
 async function needsUpdate(branch: string): Promise<boolean> {
   if (branch.startsWith("epub/")) return isBehindMain(branch);
-  return (await isBehindMain(branch)) || (await isCommitterDateOlderThan24h(branch));
+  return (
+    (await isBehindMain(branch)) || (await isCommitterDateOlderThan24h(branch))
+  );
 }
 
 async function main(): Promise<void> {
@@ -51,6 +52,7 @@ async function main(): Promise<void> {
 
     Logger.info(`Fetch new chapters for branch ${branch}...`);
     await execShell("bun prepare.ts");
+    rmSync(".temp", { recursive: true, force: true });
 
     if (!(await hasChanges())) {
       cleanGitState();
@@ -58,7 +60,7 @@ async function main(): Promise<void> {
     }
 
     Logger.info(`Committing changes for branch ${branch}...`);
-    await execShell('git rm --cached -r --ignore-unmatch .temp');
+    await execShell("git rm --cached -r --ignore-unmatch .temp");
     await execShell('git add --all -- ":!update_branches.ts" ":!.temp"');
 
     if (!(await hasStagedChanges())) {
