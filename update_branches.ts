@@ -104,19 +104,29 @@ async function main(): Promise<void> {
 
     Logger.info(`Rebase branch ${branch}...`);
     await execShell(`git checkout ${branch} -f`);
+    cleanGitState();
     await execShell("git rebase main");
 
-    if (!branch.startsWith("web/")) continue;
+    if (!branch.startsWith("web/")) {
+      cleanGitState();
+      continue;
+    }
 
     Logger.info(`Fetch new chapters for branch ${branch}...`);
     await execShell("bun prepare.ts");
 
-    if (!(await hasChanges())) continue;
+    if (!(await hasChanges())) {
+      cleanGitState();
+      continue;
+    }
 
     Logger.info(`Committing changes for branch ${branch}...`);
-    await execShell("git add .");
+    await execShell('git add --all -- ":!update_branches.ts"');
 
-    if (!(await hasChanges())) continue;
+    if (!(await hasChanges())) {
+      cleanGitState();
+      continue;
+    }
 
     const lastCommitMessage = await execShell("git log -1 --pretty=%B");
     if (lastCommitMessage === "wip") {
@@ -124,6 +134,8 @@ async function main(): Promise<void> {
     } else {
       await execShell('git commit -m "wip"');
     }
+
+    cleanGitState();
   }
 
   await execShell("git checkout main -f");
