@@ -136,9 +136,12 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     );
     if (humanizationError) {
       validationRetries++;
-      if (validationRetries > 5) {
+      if (
+        appConfig.validation.retriesLimit &&
+        validationRetries > appConfig.validation.retriesLimit
+      ) {
         Logger.warn(
-          `Validation failed 5 times for ${file}. Skipping this file.`,
+          `Validation failed ${appConfig.validation.retriesLimit} times for ${file}. Skipping this file.`,
         );
         appendFileSync(".temp/skip.txt", `${file}\n`);
         throw new Error(
@@ -156,8 +159,11 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       }
       validationError = humanizationError;
       continue;
+    } else {
+      validationError = null;
+      validationRetries = 0;
     }
-    result.push(humanizedHtml);
+    result.push(...humanizedHtml.split("\n"));
     chunk++;
     chunkOffset = 0;
     if (countLines(consistencyCheckedHTML) === countLines(result.join("\n"))) {

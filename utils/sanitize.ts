@@ -118,3 +118,41 @@ export const sanitize = (
     return rawHTML;
   }
 };
+
+export const adjustEnglishLines = (rawHTML: string) => {
+  const lines = new JSDOM(rawHTML).window.document.body.textContent.split("\n");
+  const [title, ...contents] = lines;
+  const adjustedContents = contents
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s*Part [0-9]+\s/g, (match) => `\n${match.trim()}\n`)
+    .replace(/[^a-zA-Z] "/g, (match) => `${match[0]}\n"`)
+    .replace(/[^a-zA-Z] \(/g, (match) => `${match[0]}\n(`)
+    .replace(/[^a-zA-Z] \[/g, (match) => `${match[0]}\n[`)
+    .replace(/\" [A-Z]/g, (match) => `"\n${match.slice(2)}`)
+    .replace(/\) [A-Z]/g, (match) => `)\n${match.slice(2)}`)
+    .replace(/\] [A-Z]/g, (match) => `]\n${match.slice(2)}`)
+    .split("\n")
+    .map((line) => {
+      if (
+        line.startsWith(`"`) ||
+        line.startsWith(`(`) ||
+        line.startsWith(`'`) ||
+        line.startsWith(`[`)
+      ) {
+        return line;
+      }
+      return line.replaceAll(`. `, `.\n`).replaceAll(`? `, `?\n`).split("\n");
+    })
+    .flat()
+    .join("\n")
+    .replace(/\n[a-z]/g, (match) => ` ${match.trimStart()}`)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  const finalContents = [title?.trim(), ...adjustedContents]
+    .map((line) => `<p>${line}</p>`)
+    .join("\n");
+  return sanitize(finalContents);
+};

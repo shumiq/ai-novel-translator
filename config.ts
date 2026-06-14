@@ -22,9 +22,10 @@ export const appConfig = {
   skipHighDemand: false,
   loopSkip: true,
   previousChunk: 30,
-  chunkSize: 300,
-  thinking: "medium",
+  chunkSize: 100,
+  thinking: "high",
   validation: {
+    retriesLimit: 0,
     lineCount: true,
     isThai: true,
     quouteCount: false,
