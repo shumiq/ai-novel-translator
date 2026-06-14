@@ -13,6 +13,10 @@ function getBranches(pattern: string): string[] {
     .filter((b) => b);
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function cleanGitState(): void {
   try {
     if (existsSync(LOCK_PATH)) {
@@ -29,76 +33,103 @@ function cleanGitState(): void {
       });
       Logger.warn("Aborted stale rebase");
     }
-  } catch { /* ignore */ }
-}
-
-function execShell(command: string, options?: Parameters<typeof execSync>[1]): string {
-  const defaulted = { encoding: "utf-8" as BufferEncoding, ...options };
-  try {
-    return execSync(command, defaulted).toString().trim();
-  } catch (err) {
-    cleanGitState();
-    return execSync(command, defaulted).toString().trim();
+  } catch {
+    try {
+      if (existsSync(REBASE_MERGE_PATH)) {
+        rmSync(REBASE_MERGE_PATH, { recursive: true, force: true });
+        Logger.warn("Force-removed stale rebase-merge directory");
+      }
+    } catch { /* ignore */ }
   }
 }
 
-function intFromShell(command: string): number {
-  return parseInt(execShell(command), 10);
+async function execShell(
+  command: string,
+  options?: Parameters<typeof execSync>[1],
+): Promise<string> {
+  const defaulted = { encoding: "utf-8" as BufferEncoding, ...options };
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return execSync(command, defaulted).toString().trim();
+    } catch (err) {
+      if (attempt === maxAttempts) throw err;
+      Logger.warn(
+        `Retrying git command (attempt ${attempt + 1}/${maxAttempts})...`,
+      );
+      cleanGitState();
+      await sleep(1000);
+    }
+  }
+  throw new Error("Unreachable");
 }
 
-function isBehindMain(branch: string): boolean {
-  return intFromShell(`git rev-list --count "${branch}..main"`) > 0;
+async function intFromShell(command: string): Promise<number> {
+  return parseInt(await execShell(command), 10);
 }
 
-function isCommitterDateOlderThan24h(branch: string): boolean {
-  const committerTs = intFromShell(`git log -1 --format=%ct "${branch}"`);
+async function isBehindMain(branch: string): Promise<boolean> {
+  return (await intFromShell(`git rev-list --count "${branch}..main"`)) > 0;
+}
+
+async function isCommitterDateOlderThan24h(branch: string): Promise<boolean> {
+  const committerTs = await intFromShell(
+    `git log -1 --format=%ct "${branch}"`,
+  );
   return Math.floor(Date.now() / 1000) - committerTs > 86400;
 }
 
-function needsUpdate(branch: string): boolean {
+async function needsUpdate(branch: string): Promise<boolean> {
   if (branch.startsWith("epub/")) return isBehindMain(branch);
-  return isBehindMain(branch) || isCommitterDateOlderThan24h(branch);
+  return (await isBehindMain(branch)) || (await isCommitterDateOlderThan24h(branch));
 }
 
-function hasChanges(): boolean {
-  const out = execShell("git status --porcelain");
+async function hasChanges(): Promise<boolean> {
+  const out = await execShell("git status --porcelain");
   return out.length > 0;
 }
 
-const allBranches = BRANCH_PREFIXES.flatMap(getBranches);
+async function main(): Promise<void> {
+  const allBranches = BRANCH_PREFIXES.flatMap(getBranches);
 
-execShell("git checkout main -f");
+  await execShell("git checkout main -f");
 
-for (const branch of allBranches) {
-  cleanGitState();
+  for (const branch of allBranches) {
+    cleanGitState();
 
-  if (!needsUpdate(branch)) {
-    Logger.info(`Skip branch ${branch} (up-to-date and recent commit).`);
-    continue;
-  }
+    if (!(await needsUpdate(branch))) {
+      Logger.info(`Skip branch ${branch} (up-to-date and recent commit).`);
+      continue;
+    }
 
-  Logger.info(`Rebase branch ${branch}...`);
-  execShell(`git checkout ${branch} -f`);
-  execShell(`git rebase main`);
+    Logger.info(`Rebase branch ${branch}...`);
+    await execShell(`git checkout ${branch} -f`);
+    await execShell("git rebase main");
 
-  if (branch.startsWith("web/")) {
+    if (!branch.startsWith("web/")) continue;
+
     Logger.info(`Fetch new chapters for branch ${branch}...`);
-    execShell("bun prepare.ts");
+    await execShell("bun prepare.ts");
 
-    if (!hasChanges()) continue;
+    if (!(await hasChanges())) continue;
 
     Logger.info(`Committing changes for branch ${branch}...`);
-    execShell("git add .");
+    await execShell("git add .");
 
-    if (!hasChanges()) continue;
+    if (!(await hasChanges())) continue;
 
-    const lastCommitMessage = execShell("git log -1 --pretty=%B");
+    const lastCommitMessage = await execShell("git log -1 --pretty=%B");
     if (lastCommitMessage === "wip") {
-      execShell("git commit --amend --no-edit");
+      await execShell("git commit --amend --no-edit");
     } else {
-      execShell('git commit -m "wip"');
+      await execShell('git commit -m "wip"');
     }
   }
+
+  await execShell("git checkout main -f");
 }
 
-execShell("git checkout main -f");
+main().catch((err) => {
+  Logger.error(err.message);
+  process.exit(1);
+});
