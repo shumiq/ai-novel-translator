@@ -6,9 +6,38 @@ import { isThai } from "./lang";
 
 const glob = new Glob("books/**/*html");
 
+function chapterSortFn(a: string, b: string) {
+  const isEpub = a.split("/").length > 2; // crude check for epub vs web
+  if (!isEpub) {
+    return (
+      Number(a.replaceAll(/[^0-9]/g, "0")) -
+      Number(b.replaceAll(/[^0-9]/g, "0"))
+    );
+  }
+  const aPath = a.split("/").slice(0, -1).join("/");
+  const aFile = a.split("/").slice(-1)[0]!;
+  const bPath = b.split("/").slice(0, -1).join("/");
+  const bFile = b.split("/").slice(-1)[0]!;
+  if (aPath !== bPath) {
+    return aPath.localeCompare(bPath);
+  }
+  const opf = aPath.split("/").slice(0, 2).join("/") + "/content.opf";
+  if (existsSync(opf)) {
+    const rawOPF = readFileSync(opf, "utf-8");
+    return rawOPF.indexOf(aFile) - rawOPF.indexOf(bFile);
+  } else {
+    return (
+      Number(aFile.replaceAll(/[^0-9]/g, "0")) -
+      Number(bFile.replaceAll(/[^0-9]/g, "0"))
+    );
+  }
+}
+
 export function getAllFiles(options?: { force?: boolean }) {
   if (existsSync(".temp/novel_files.json") && !options?.force) {
-    return JSON.parse(readFileSync(".temp/novel_files.json", "utf-8")) as string[];
+    return JSON.parse(
+      readFileSync(".temp/novel_files.json", "utf-8"),
+    ) as string[];
   }
   const files = (Array.from(glob.scanSync(".")) as string[])
     .map((file) => file.replaceAll("\\", "/"))
@@ -22,12 +51,7 @@ export function getAllFiles(options?: { force?: boolean }) {
       if (lines.length === 0) return false;
       return true;
     })
-    .sort((a, b) =>
-      a.split("/").length > 2
-        ? a.localeCompare(b)
-        : Number(a.replaceAll(/[^0-9]/g, "")) -
-          Number(b.replaceAll(/[^0-9]/g, "")),
-    );
+    .sort(chapterSortFn);
   writeFileSync(".temp/novel_files.json", JSON.stringify(files, null, 2));
   return files;
 }
@@ -39,12 +63,7 @@ export function extractNonThai() {
       if (isThai(rawHTML)) return false;
       return true;
     })
-    .sort((a, b) =>
-      a.split("/").length > 2
-        ? a.localeCompare(b)
-        : Number(a.replaceAll(/[^0-9]/g, "")) -
-          Number(b.replaceAll(/[^0-9]/g, "")),
-    );
+    .sort(chapterSortFn);
 }
 
 export function extractThai() {
