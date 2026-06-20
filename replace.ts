@@ -178,14 +178,6 @@ async function main() {
     const oldCount = countOccurrences(match.currentText, oldWord);
     const newCount = countOccurrences(newText, newWord);
 
-    if (origCount === oldCount && oldCount === newCount) {
-      lines[lineIndex] = newLine;
-      writeFileSync(file, lines.join(hasCRLF ? "\r\n" : "\n"), "utf-8");
-      replaced++;
-      console.log(`  ✓ Auto-replaced (${origCount} occurrence${origCount !== 1 ? "s" : ""})`);
-      continue;
-    }
-
     console.log(`\n[${idx + 1}/${matches.length}] --- ${file}:${lineNum} ---`);
     console.log(
       `  ${CYAN}Original:${RESET} ${highlightIn(match.originalText, originalWord, YELLOW)}`,
@@ -194,6 +186,14 @@ async function main() {
     console.log(
       `  ${GREEN}After:${RESET}    ${highlightIn(newLine, newWord, GREEN)}`,
     );
+
+    if (origCount === oldCount && oldCount === newCount) {
+      lines[lineIndex] = newLine;
+      writeFileSync(file, lines.join(hasCRLF ? "\r\n" : "\n"), "utf-8");
+      replaced++;
+      console.log(`  ✓ Auto-replaced (${origCount} occurrence${origCount !== 1 ? "s" : ""})`);
+      continue;
+    }
 
     const answer = await rl.question("Replace? (Y/n): ");
     if (answer.toLowerCase() === "n" || answer.toLowerCase() === "no") {
