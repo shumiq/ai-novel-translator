@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
 import { rmSync } from "fs";
+import { novelConfig } from "./config";
 import {
   cleanGitState,
   execShell,
@@ -47,6 +48,12 @@ async function main(): Promise<void> {
     processedCount++;
 
     try {
+      if (novelConfig.originalLanguage === "Japanese") {
+        execSync(`bun merge_multiline_speech_jp.ts`, {
+          encoding: "utf-8",
+          stdio: "inherit",
+        });
+      }
       execSync("bun start", { encoding: "utf-8", stdio: "inherit" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
