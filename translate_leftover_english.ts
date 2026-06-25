@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { readFileSync, rmdir, rmSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { appConfig } from "./config";
 import { extractThai } from "./utils/extract";
 import { isEnglish, isThai } from "./utils/lang";
@@ -30,6 +30,7 @@ while (true) {
     process.exit(0);
   }
 
+  if (!existsSync(".temp")) mkdirSync(".temp");
   writeFileSync(
     ".temp/INSTRUCTION.md",
     `# Agent Task: English to Thai Translation (Leftover Cleanup)

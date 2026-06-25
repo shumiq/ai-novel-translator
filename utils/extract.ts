@@ -1,5 +1,5 @@
 import { Glob } from "bun";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { JSDOM } from "jsdom";
 import { appConfig } from "../config";
 import { isThai } from "./lang";
@@ -52,6 +52,7 @@ export function getAllFiles(options?: { force?: boolean }) {
       return true;
     })
     .sort(chapterSortFn);
+  if (!existsSync(".temp")) mkdirSync(".temp");
   writeFileSync(".temp/novel_files.json", JSON.stringify(files, null, 2));
   return files;
 }

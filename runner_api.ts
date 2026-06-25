@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { appConfig, novelConfig } from "./config";
 import { extraction } from "./instructions/1_extraction";
 import { translation } from "./instructions/2_translation";
@@ -36,6 +36,7 @@ const removeFirstFromQueue = () => {
 };
 
 export const runnerAPI = async () => {
+  if (!existsSync(".temp")) mkdirSync(".temp");
   let count = 0;
   const LIMIT = 10;
 

@@ -1,6 +1,7 @@
 import {
   appendFileSync,
   existsSync,
+  mkdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -28,6 +29,7 @@ const getSourceFile = (file: string) => {
 };
 
 export async function humanization(file: string) {
+  if (!existsSync(".temp")) mkdirSync(".temp");
   const originalHtml = readFileSync(file, "utf-8");
   const previousContent = getPreviousChapterContent(file);
 

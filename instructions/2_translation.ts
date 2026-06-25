@@ -1,4 +1,11 @@
-import { appendFileSync, readFileSync, rmSync, writeFileSync } from "fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
 import { appConfig, novelConfig } from "../config";
 import { aiRequest } from "../utils/ai";
 import { countLines } from "../utils/count_line";
@@ -10,6 +17,7 @@ import { sanitize } from "../utils/sanitize";
 import { validate } from "../utils/validate";
 
 export async function translation(file: string) {
+  if (!existsSync(".temp")) mkdirSync(".temp");
   Logger.info(`Translating: ${file}`);
 
   const rawHTML = readFileSync(file, "utf-8");

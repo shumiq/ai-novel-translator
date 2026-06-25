@@ -1,12 +1,12 @@
 import { execSync } from "child_process";
 import {
-    appendFileSync,
-    cpSync,
-    existsSync,
-    mkdirSync,
-    readFileSync,
-    rmSync,
-    writeFileSync,
+  appendFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
 } from "fs";
 import { novelConfig } from "./config";
 import { aiRequest } from "./utils/ai";

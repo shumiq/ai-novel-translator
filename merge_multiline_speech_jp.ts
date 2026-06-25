@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { Glob } from "bun";
-import { readFileSync, rmSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
 import { appConfig } from "./config";
@@ -114,6 +114,9 @@ while (true) {
     }
   }
 
+  if (!existsSync(".temp")) {
+    mkdirSync(".temp");
+  }
   writeFileSync(
     ".temp/INSTRUCTION.md",
     `# Agent Task: Fix Unmatched Japanese Quote Characters

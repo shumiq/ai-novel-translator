@@ -22,7 +22,9 @@ export function cleanGitState(): void {
       rmSync(LOCK_PATH, { force: true });
       Logger.warn("Removed stale index.lock");
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   try {
     if (existsSync(REBASE_MERGE_PATH)) {
@@ -38,7 +40,9 @@ export function cleanGitState(): void {
         rmSync(REBASE_MERGE_PATH, { recursive: true, force: true });
         Logger.warn("Force-removed stale rebase-merge directory");
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 }
 

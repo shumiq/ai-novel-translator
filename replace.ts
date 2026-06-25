@@ -191,7 +191,9 @@ async function main() {
       lines[lineIndex] = newLine;
       writeFileSync(file, lines.join(hasCRLF ? "\r\n" : "\n"), "utf-8");
       replaced++;
-      console.log(`  ✓ Auto-replaced (${origCount} occurrence${origCount !== 1 ? "s" : ""})`);
+      console.log(
+        `  ✓ Auto-replaced (${origCount} occurrence${origCount !== 1 ? "s" : ""})`,
+      );
       continue;
     }
 

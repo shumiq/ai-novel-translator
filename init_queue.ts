@@ -1,6 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { appConfig } from "./config";
 import { extractNonThai, getAllFiles } from "./utils/extract";
+
+if (!existsSync(".temp")) mkdirSync(".temp");
 
 console.log("Initializing queue...");
 getAllFiles({ force: true }); // Refresh novel_files.json

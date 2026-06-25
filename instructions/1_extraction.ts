@@ -2,6 +2,7 @@ import { execSync } from "child_process";
 import {
   appendFileSync,
   existsSync,
+  mkdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -17,6 +18,7 @@ import { isJapanese } from "../utils/lang";
 import type { Dictonary } from "../utils/types";
 
 export async function extraction(file: string) {
+  if (!existsSync(".temp")) mkdirSync(".temp");
   Logger.info(`Extracting: ${file}`);
 
   const rawHtml = readFileSync(file, "utf-8");

@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
 import { Logger } from "./logger";
 
@@ -33,6 +33,10 @@ function getApiKey() {
   return nonExpiredKeys[Math.floor(Math.random() * nonExpiredKeys.length)];
 }
 
+function ensureTempDir() {
+  if (!existsSync(".temp")) mkdirSync(".temp");
+}
+
 export async function geminiRequest({
   instruction,
   prompt,
@@ -42,6 +46,7 @@ export async function geminiRequest({
   prompt: string;
   body?: object;
 }) {
+  ensureTempDir();
   const body = {
     systemInstruction: {
       parts: [
@@ -192,6 +197,7 @@ export async function geminiCliRequest({
   body: additionalBody,
   runner = "api-fallback-handler",
 }: Parameters<typeof geminiRequest>[0] & { runner?: string }) {
+  ensureTempDir();
   writeFileSync(
     ".temp/INSTRUCTION.md",
     [

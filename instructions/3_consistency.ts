@@ -1,6 +1,7 @@
 import {
   appendFileSync,
   existsSync,
+  mkdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -24,6 +25,7 @@ const getSourceFile = (file: string) => {
 };
 
 export async function consistencyCheck(file: string) {
+  if (!existsSync(".temp")) mkdirSync(".temp");
   const originalHtml = readFileSync(file, "utf-8");
   const translatedHtml = readFileSync(getSourceFile(file), "utf-8");
   const previousContent = getPreviousChapterContent(file);
