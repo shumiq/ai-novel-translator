@@ -60,8 +60,8 @@ export const Logger = {
 
   progress(...args: unknown[]) {
     const msg = flat(args);
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
+    if (typeof process.stdout.clearLine === "function") process.stdout.clearLine(0);
+    if (typeof process.stdout.cursorTo === "function") process.stdout.cursorTo(0);
     process.stdout.write(`${c.cyan}${c.bold}►${c.reset} ${msg}`);
     _progressActive = true;
   },
