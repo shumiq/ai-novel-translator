@@ -1,8 +1,8 @@
 import { Glob } from "bun";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { JSDOM } from "jsdom";
 import { appConfig } from "../config";
 import { isThai } from "./lang";
+import { extractLinesFromHtml } from "./text";
 
 const glob = new Glob("books/**/*html");
 
@@ -43,13 +43,9 @@ export function getAllFiles(options?: { force?: boolean }) {
     .map((file) => file.replaceAll("\\", "/"))
     .filter((file) => {
       const rawHTML = readFileSync(file, "utf-8");
-      const body = new JSDOM(rawHTML).window.document.body.textContent;
-      const lines: string[] = body
-        .split("\n")
-        .map((el) => el.trim())
-        .filter(Boolean);
-      if (lines.length === 0) return false;
-      return true;
+      // Only include files with actual <p> content — image-only EPUB files
+      // (no <p> tags) are correctly excluded.
+      return extractLinesFromHtml(rawHTML).length > 0;
     })
     .sort(chapterSortFn);
   if (!existsSync(".temp")) mkdirSync(".temp");
