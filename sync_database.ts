@@ -3,7 +3,6 @@ import {
   appendFileSync,
   cpSync,
   existsSync,
-  mkdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -16,9 +15,10 @@ import { isJapanese } from "./utils/lang";
 import { Logger } from "./utils/logger";
 import { sanitize } from "./utils/sanitize";
 import type { Dictonary } from "./utils/types";
+import { ensureTempDir } from "./utils/temp";
 
 async function syncDatabase() {
-  if (!existsSync(".temp")) mkdirSync(".temp");
+  ensureTempDir();
 
   let currentData: Dictonary = {};
   try {

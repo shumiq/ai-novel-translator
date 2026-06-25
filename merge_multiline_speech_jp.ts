@@ -1,44 +1,16 @@
 import { execSync } from "child_process";
 import { Glob } from "bun";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
 import { appConfig } from "./config";
+import {
+  isLineCloseQuote,
+  findProblematicLines,
+} from "./utils/japanese";
+import { ensureTempDir } from "./utils/temp";
 
 const glob = new Glob("books/**/*html");
-
-function isLineCloseQuote(line: string) {
-  const openQuoteCount =
-    (line.match(/「/g) || []).length + (line.match(/『/g) || []).length;
-  const closeQuoteCount =
-    (line.match(/」/g) || []).length + (line.match(/』/g) || []).length;
-  return openQuoteCount === closeQuoteCount;
-}
-
-function getQuoteBalance(line: string): {
-  openCount: number;
-  closeCount: number;
-  diff: number;
-} {
-  const openCount =
-    (line.match(/「/g) || []).length + (line.match(/『/g) || []).length;
-  const closeCount =
-    (line.match(/」/g) || []).length + (line.match(/』/g) || []).length;
-  return { openCount, closeCount, diff: openCount - closeCount };
-}
-
-/** Detect lines where the quote count is unbalanced. */
-function findProblematicLines(content: string): number[] {
-  const lines = content.split("\n");
-  const problemLines: number[] = [];
-  lines.forEach((line, index) => {
-    const { openCount, closeCount } = getQuoteBalance(line);
-    if (openCount !== closeCount) {
-      problemLines.push(index + 1);
-    }
-  });
-  return problemLines;
-}
 
 while (true) {
   const files = Array.from(glob.scanSync(".")) as string[];
@@ -114,9 +86,7 @@ while (true) {
     }
   }
 
-  if (!existsSync(".temp")) {
-    mkdirSync(".temp");
-  }
+  ensureTempDir();
   writeFileSync(
     ".temp/INSTRUCTION.md",
     `# Agent Task: Fix Unmatched Japanese Quote Characters

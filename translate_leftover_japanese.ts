@@ -1,9 +1,10 @@
 import { execSync } from "child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { appConfig } from "./config";
 import { extractThai } from "./utils/extract";
 import { isJapanese } from "./utils/lang";
 import { Logger } from "./utils/logger";
+import { ensureTempDir } from "./utils/temp";
 
 function getJapaneseLines(text: string) {
   return text
@@ -28,7 +29,7 @@ while (true) {
     process.exit(0);
   }
 
-  if (!existsSync(".temp")) mkdirSync(".temp");
+  ensureTempDir();
   writeFileSync(
     ".temp/INSTRUCTION.md",
     `# Agent Task: Japanese to Thai Translation (Leftover Cleanup)

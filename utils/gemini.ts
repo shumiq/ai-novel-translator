@@ -1,7 +1,8 @@
 import { execSync } from "child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
 import { Logger } from "./logger";
+import { ensureTempDir } from "./temp";
 
 const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model.api}:generateContent`;
 
@@ -31,10 +32,6 @@ function getApiKey() {
     return;
   }
   return nonExpiredKeys[Math.floor(Math.random() * nonExpiredKeys.length)];
-}
-
-function ensureTempDir() {
-  if (!existsSync(".temp")) mkdirSync(".temp");
 }
 
 export async function geminiRequest({

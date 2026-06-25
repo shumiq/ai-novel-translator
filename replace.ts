@@ -1,6 +1,12 @@
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
 import { createInterface } from "node:readline/promises";
+import {
+  extractText,
+  escapeRegex,
+  countOccurrences,
+  highlightIn,
+} from "./utils/text";
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
@@ -12,35 +18,12 @@ interface Match {
   currentText: string;
 }
 
-function extractText(line: string | undefined): string | null {
-  if (!line) return null;
-  const m = line.match(/^<p>(.*)<\/p>$/);
-  return m ? (m[1] ?? null) : null;
-}
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function countOccurrences(text: string, word: string): number {
-  if (!word) return 0;
-  const regex = new RegExp(escapeRegex(word), "gi");
-  const matches = text.match(regex);
-  return matches ? matches.length : 0;
-}
-
 const BOLD = "\x1b[1m";
 const YELLOW = "\x1b[33m";
 const RED = "\x1b[31m";
 const GREEN = "\x1b[32m";
 const CYAN = "\x1b[36m";
 const RESET = "\x1b[0m";
-
-function highlightIn(text: string, word: string, color: string): string {
-  if (!word) return text;
-  const regex = new RegExp(escapeRegex(word), "gi");
-  return text.replace(regex, (m) => `${BOLD}${color}${m}${RESET}`);
-}
 
 async function main() {
   const originalWord = await rl.question(

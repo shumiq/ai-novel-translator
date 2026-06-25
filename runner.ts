@@ -1,14 +1,11 @@
-import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, writeFileSync } from "fs";
 import { runnerAPI } from "./runner_api";
+import { ensureTempDir, ensureSkipFile } from "./utils/temp";
 
-if (!existsSync(".temp")) {
-  mkdirSync(".temp");
-}
+ensureTempDir();
 if (!existsSync("./novel_data.json")) {
   writeFileSync("./novel_data.json", "{}");
 }
-if (!existsSync("./.temp/skip.txt")) {
-  writeFileSync("./.temp/skip.txt", "");
-}
+ensureSkipFile();
 
 await runnerAPI();

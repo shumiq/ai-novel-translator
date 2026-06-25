@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { appConfig, novelConfig } from "./config";
 import { extraction } from "./instructions/1_extraction";
 import { translation } from "./instructions/2_translation";
@@ -7,6 +7,11 @@ import { consistencyCheck } from "./instructions/3_consistency";
 import { humanization } from "./instructions/4_humanization";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
+import {
+  ensureTempDir,
+  getNextFromQueue,
+  removeFirstFromQueue,
+} from "./utils/temp";
 
 const getFinalFile = (file: string) => {
   const files = [
@@ -21,27 +26,13 @@ const getFinalFile = (file: string) => {
   return file;
 };
 
-const getNextFile = (): string | null => {
-  if (!existsSync(".temp/queue.txt")) return null;
-  const content = readFileSync(".temp/queue.txt", "utf-8").trim();
-  if (!content) return null;
-  return content.split("\n")[0] || null;
-};
-
-const removeFirstFromQueue = () => {
-  const content = readFileSync(".temp/queue.txt", "utf-8").trim();
-  const lines = content.split("\n");
-  lines.shift();
-  writeFileSync(".temp/queue.txt", lines.join("\n") + "\n", "utf-8");
-};
-
 export const runnerAPI = async () => {
-  if (!existsSync(".temp")) mkdirSync(".temp");
+  ensureTempDir();
   let count = 0;
   const LIMIT = 10;
 
   while (true) {
-    const file = getNextFile();
+    const file = getNextFromQueue();
     if (!file) break;
 
     if (count++ >= LIMIT) {

@@ -1,8 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { appConfig } from "./config";
 import { extractNonThai, getAllFiles } from "./utils/extract";
+import { ensureTempDir, writeQueue } from "./utils/temp";
 
-if (!existsSync(".temp")) mkdirSync(".temp");
+ensureTempDir();
 
 console.log("Initializing queue...");
 getAllFiles({ force: true }); // Refresh novel_files.json
@@ -16,8 +17,4 @@ const skips = existsSync(".temp/skip.txt")
 
 const queue = files.filter((file) => !skips.includes(file));
 
-writeFileSync(
-  ".temp/queue.txt",
-  queue.join("\n") + (queue.length > 0 ? "\n" : ""),
-  "utf-8",
-);
+writeQueue(queue);
