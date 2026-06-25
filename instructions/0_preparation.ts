@@ -12,7 +12,9 @@ import { novelConfig } from "../config";
 import { Logger } from "../utils/logger";
 
 export async function preparation() {
-  // #1. check if all config.ts has been set up, if not, prompt the user to set up and exit the process.
+  Logger.step("📦", "Preparation");
+
+  // #1. ensure directories and files
   {
     if (novelConfig.outputPath && !existsSync(novelConfig.outputPath)) {
       mkdirSync(novelConfig.outputPath, { recursive: true });
@@ -48,6 +50,7 @@ export async function preparation() {
     }
   }
   // #2. copy all json from config.outputPath to json folder
+  Logger.info("Copy JSON from output path");
   if (novelConfig.outputPath && existsSync(novelConfig.outputPath)) {
     const files = readdirSync(novelConfig.outputPath).filter((file) =>
       file.endsWith(".json"),
@@ -62,6 +65,7 @@ export async function preparation() {
     });
   }
   // #3. copy all json from config.originalPath to json folder, only if the json file does not exist in json folder, to avoid overwriting the extracted data.
+  Logger.info("Copy JSON from original path");
   if (novelConfig.originalPath && existsSync(novelConfig.originalPath)) {
     const files = readdirSync(novelConfig.originalPath).filter((file) =>
       file.endsWith(".json"),
@@ -99,6 +103,7 @@ export async function preparation() {
     }
   }
   // #4. convert all json to html
+  Logger.info("Convert JSON to HTML");
   if (existsSync("./json/meta.json")) {
     const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
       id: string;
@@ -138,4 +143,6 @@ export async function preparation() {
       );
     });
   }
+
+  Logger.done("Preparation complete");
 }

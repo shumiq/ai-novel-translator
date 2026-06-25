@@ -41,6 +41,7 @@ async function processBranch(branch: string): Promise<void> {
   await execShell("git rebase main");
 
   if (!branch.startsWith("web/")) {
+    Logger.info(`  └─ not a web branch, skipping`);
     cleanGitState();
     return;
   }
@@ -50,6 +51,7 @@ async function processBranch(branch: string): Promise<void> {
   rmSync(".temp", { recursive: true, force: true });
 
   if (!(await hasChanges())) {
+    Logger.info(`  └─ no new chapters to commit`);
     cleanGitState();
     return;
   }
@@ -58,6 +60,7 @@ async function processBranch(branch: string): Promise<void> {
   await execShell('git add --all -- ":!update_branches.ts" ":!.temp"');
 
   if (!(await hasChanges())) {
+    Logger.info(`  └─ nothing staged, skipping commit`);
     cleanGitState();
     return;
   }
@@ -74,6 +77,7 @@ async function processBranch(branch: string): Promise<void> {
 
 async function main(): Promise<void> {
   const allBranches = BRANCH_PREFIXES.flatMap(getBranches);
+  Logger.info(`Found ${allBranches.length} branches to check`);
 
   await execShell("git checkout main -f");
 
@@ -90,6 +94,7 @@ async function main(): Promise<void> {
   }
 
   await execShell("git checkout main -f");
+  Logger.done("Branch update complete");
 }
 
 main().catch((err) => {

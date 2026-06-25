@@ -35,7 +35,11 @@ export const runnerAPI = async () => {
     const file = getNextFromQueue();
     if (!file) break;
 
-    if (count++ >= LIMIT) {
+    count++;
+    Logger.step("", `[${count}] ${file}`);
+
+    if (count >= LIMIT) {
+      Logger.warn(`Reached limit of ${LIMIT} files. Resetting skip list.`);
       if (appConfig.loopSkip) writeFileSync(".temp/skip.txt", "");
       process.exit(1);
     }
@@ -117,10 +121,16 @@ export const runnerAPI = async () => {
   ) {
     process.exit(1);
   }
+  Logger.step("🧹", "Leftover cleanup");
+
   if (novelConfig.originalLanguage === "Japanese") {
+    Logger.info("  └─ translate_leftover_japanese");
     execSync(`bun translate_leftover_japanese.ts`);
   } else {
+    Logger.info("  └─ translate_leftover_english");
     execSync(`bun translate_leftover_english.ts`);
   }
+
+  Logger.done("Pipeline complete");
   process.exit(0);
 };

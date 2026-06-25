@@ -4,10 +4,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { isThai } from "./utils/lang";
 import { Logger } from "./utils/logger";
 import { appConfig } from "./config";
-import {
-  isLineCloseQuote,
-  findProblematicLines,
-} from "./utils/japanese";
+import { isLineCloseQuote, findProblematicLines } from "./utils/japanese";
 import { ensureTempDir } from "./utils/temp";
 
 const glob = new Glob("books/**/*html");
@@ -74,7 +71,7 @@ while (true) {
 
   // ── Build task list for the agent ──────────────────────────────────
   Logger.warn(
-    `\nFound ${unmatchedFiles.length} file(s) with probably-mistaken quotes. Dispatching to agent for fixing...`,
+    `Found ${unmatchedFiles.length} file(s) with probably-mistaken quotes. Dispatching to agent for fixing...`,
   );
 
   const taskLines: string[] = [];

@@ -30,7 +30,7 @@ export async function consistencyCheck(file: string) {
   const translatedHtml = readFileSync(getSourceFile(file), "utf-8");
   const previousContent = getPreviousChapterContent(file);
 
-  Logger.info(`Performing consistency check: ${file}`);
+  Logger.info(`Consistency check: ${file}`);
 
   const existedWords = extractExistedWords(originalHtml);
 
@@ -62,6 +62,7 @@ export async function consistencyCheck(file: string) {
       result = [];
       continue;
     }
+    Logger.debug(`  Chunk ${chunk + 1} (lines ${chunkStart + 1}-${chunkEnd})`);
     const previousChunk =
       chunk > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
@@ -124,7 +125,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
 
     const consistencyCheckedHtml = sanitize(response);
 
-    Logger.debug(`Consistency check completed. Validating...`);
+    Logger.debug(`  └─ validating...`);
     const consistencyError = validate(
       originalChunk,
       consistencyCheckedHtml,
@@ -132,6 +133,9 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     );
     if (consistencyError) {
       validationRetries++;
+      Logger.debug(
+        `  └─ validation failed, attempt ${validationRetries} (line ${consistencyError.match(/at line (\d+)/)?.[1] ?? "?"})`,
+      );
       if (
         appConfig.validation.retriesLimit &&
         validationRetries > appConfig.validation.retriesLimit
@@ -162,6 +166,9 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     result.push(...consistencyCheckedHtml.split("\n"));
     chunk++;
     chunkOffset = 0;
+    Logger.debug(
+      `  └─ chunk done (${result.length}/${originalLines.length} lines)`,
+    );
     if (countLines(originalHtml) === countLines(result.join("\n"))) {
       writeFileSync(
         `.temp/consistency_checked_${file.replaceAll("/", "_")}`,

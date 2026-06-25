@@ -129,6 +129,7 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
       try {
         JSON.parse(response);
       } catch (e) {
+        Logger.debug(`  └─ invalid JSON response, retrying...`);
         Logger.error(
           `Invalid JSON returned for file ${file}: ${(e as Error).message}`,
         );
@@ -185,6 +186,9 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
     }
 
     if (hasEmptyTranslations) {
+      Logger.debug(
+        `  └─ some terms had empty translations after filtering, retrying...`,
+      );
       if (existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`))
         rmSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`);
       continue;

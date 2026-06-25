@@ -13,7 +13,10 @@ import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 
 export async function finalization() {
+  Logger.step("📦", "Finalization");
+
   // #1. convert all html to json
+  Logger.info("Convert HTML to JSON");
   if (existsSync("./json/meta.json")) {
     const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
       id: string;
@@ -60,10 +63,12 @@ export async function finalization() {
     writeFileSync("./json/meta.json", JSON.stringify(meta, null, 2));
   }
   // #2. git add all json
+  Logger.info("Git add JSON files");
   if (existsSync("./json")) {
     execSync(`git add json`);
   }
   // #3. copy all json from json folder to config.outputPath, overwrite if exists.
+  Logger.info("Copy JSON to output path");
   if (
     existsSync("./json") &&
     novelConfig.outputPath &&
@@ -88,4 +93,6 @@ export async function finalization() {
     cpSync("./novel_data.json", novelConfig.dictionaryPath);
     Logger.info(`Copied: ./novel_data.json to ${novelConfig.dictionaryPath}`);
   }
+
+  Logger.done("Finalization complete");
 }

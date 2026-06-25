@@ -33,7 +33,7 @@ export async function humanization(file: string) {
   const originalHtml = readFileSync(file, "utf-8");
   const previousContent = getPreviousChapterContent(file);
 
-  Logger.info(`Performing humanization: ${file}`);
+  Logger.info(`Humanization: ${file}`);
 
   const existedWords = extractExistedWords(originalHtml);
   const consistencyCheckedHTML = readFileSync(getSourceFile(file), "utf-8");
@@ -66,6 +66,7 @@ export async function humanization(file: string) {
       result = [];
       continue;
     }
+    Logger.debug(`  Chunk ${chunk + 1} (lines ${chunkStart + 1}-${chunkEnd})`);
     const previousChunk =
       chunk > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
@@ -130,7 +131,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
 
     const humanizedHtml = sanitize(response);
 
-    Logger.debug(`Humanization completed. Validating...`);
+    Logger.debug(`  └─ validating...`);
     const humanizationError = validate(
       translatedChunk,
       humanizedHtml,
@@ -138,6 +139,9 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     );
     if (humanizationError) {
       validationRetries++;
+      Logger.debug(
+        `  └─ validation failed, attempt ${validationRetries} (line ${humanizationError.match(/at line (\d+)/)?.[1] ?? "?"})`,
+      );
       if (
         appConfig.validation.retriesLimit &&
         validationRetries > appConfig.validation.retriesLimit
@@ -168,6 +172,9 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     result.push(...humanizedHtml.split("\n"));
     chunk++;
     chunkOffset = 0;
+    Logger.debug(
+      `  └─ chunk done (${result.length}/${originalLines.length} lines)`,
+    );
     if (countLines(consistencyCheckedHTML) === countLines(result.join("\n"))) {
       writeFileSync(
         `.temp/final_humanized_${file.replaceAll("/", "_")}`,

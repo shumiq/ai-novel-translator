@@ -10,3 +10,4 @@ files.toSorted().forEach((file) => {
   Logger.progress(`Processing ${file}`);
   sanitizeFile(file, { noReplace: true });
 });
+Logger.done(`Sanitized ${files.length} files`);

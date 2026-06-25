@@ -48,6 +48,7 @@ export async function translation(file: string) {
       result = [];
       continue;
     }
+    Logger.debug(`  Chunk ${chunk + 1} (lines ${chunkStart + 1}-${chunkEnd})`);
     const previousChunk =
       chunk > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
@@ -107,7 +108,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
 
     const translatedHtml = sanitize(response);
 
-    Logger.debug(`Translation completed. Validating...`);
+    Logger.debug(`  └─ validating...`);
     const translationError = validate(
       processedChunk,
       translatedHtml,
@@ -115,6 +116,9 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     );
     if (translationError) {
       validationRetries++;
+      Logger.debug(
+        `  └─ validation failed, attempt ${validationRetries} (line ${translationError.match(/at line (\d+)/)?.[1] ?? "?"})`,
+      );
       if (
         appConfig.validation.retriesLimit &&
         validationRetries > appConfig.validation.retriesLimit
@@ -145,6 +149,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     result.push(...translatedHtml.split("\n"));
     chunk++;
     chunkOffset = 0;
+    Logger.debug(`  └─ chunk done (${result.length}/${rawLines.length} lines)`);
     if (countLines(rawHTML) === countLines(result.join("\n"))) {
       writeFileSync(
         `.temp/translated_${file.replaceAll("/", "_")}`,

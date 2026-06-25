@@ -130,7 +130,7 @@ export async function geminiRequest({
           });
         }
         retryCount++;
-        Logger.error(`Retrying after 5 seconds...`);
+        Logger.warn(`Retrying after 5 seconds...`);
         await new Promise((res) => setTimeout(res, 5000));
         continue;
       }

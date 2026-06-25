@@ -15,11 +15,7 @@ export function countOccurrences(text: string, word: string): number {
   return matches ? matches.length : 0;
 }
 
-export function highlightIn(
-  text: string,
-  word: string,
-  color: string,
-): string {
+export function highlightIn(text: string, word: string, color: string): string {
   if (!word) return text;
   const regex = new RegExp(escapeRegex(word), "gi");
   const BOLD = "\x1b[1m";
