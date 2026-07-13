@@ -11,8 +11,8 @@ export const appConfig = {
   mode: "api",
   fallbackAgent: "opencode",
   model: {
-    api: "gemini-3.5-flash",
-    agent: "gemini-3.5-flash",
+    api: "gemini-3.1-flash-lite",
+    agent: "gemini-3.1-flash-lite",
   },
   apiKeys: process.env.GEMINI_API_KEY
     ? process.env.GEMINI_API_KEY.split(",")
