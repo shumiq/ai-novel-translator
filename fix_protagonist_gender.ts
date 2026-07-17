@@ -133,7 +133,54 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       continue;
     }
 
-    writeFileSync(file, correctedHtml);
+    const oldLines = rawHTML.split("\n");
+    const newLines = correctedHtml.split("\n");
+
+    if (oldLines.length !== newLines.length) {
+      Logger.warn(
+        `Line count mismatch in ${file}: ${oldLines.length} vs ${newLines.length}. Skipping extra sanitizing.`,
+      );
+      writeFileSync(file, correctedHtml);
+    } else {
+      const sanitizedLines = oldLines.map((oldLine, i) => {
+        const newLine = newLines[i]!;
+        if (oldLine === newLine) return oldLine;
+
+        const oldMe = (oldLine.match(/ผม/g) ?? []).length;
+        const newMe = (newLine.match(/ผม/g) ?? []).length;
+        const increaseMe = newMe - oldMe;
+
+        const oldDichan = (oldLine.match(/ดิฉัน/g) ?? []).length;
+        const newDichan = (newLine.match(/ดิฉัน/g) ?? []).length;
+        const oldChan = (oldLine.match(/ฉัน/g) ?? []).length;
+        const newChan = (newLine.match(/ฉัน/g) ?? []).length;
+        const increaseFemale = newDichan + newChan - (oldDichan + oldChan);
+
+        const oldKrub = (oldLine.match(/ครับ/g) ?? []).length;
+        const newKrub = (newLine.match(/ครับ/g) ?? []).length;
+        const increaseKrub = newKrub - oldKrub;
+
+        const oldKa = (oldLine.match(/ค่ะ/g) ?? []).length;
+        const newKa = (newLine.match(/ค่ะ/g) ?? []).length;
+        const oldKa2 = (oldLine.match(/คะ/g) ?? []).length;
+        const newKa2 = (newLine.match(/คะ/g) ?? []).length;
+        const increaseFemaleParticle = newKa + newKa2 - (oldKa + oldKa2);
+
+        const meBalanced = increaseMe !== 0 && increaseMe === -increaseFemale;
+        const krubBalanced =
+          increaseKrub !== 0 && increaseKrub === -increaseFemaleParticle;
+
+        if (meBalanced || krubBalanced) {
+          // Logger.info(`  └─ line ${i + 1} (old)\t: ${oldLine}`);
+          // Logger.info(`  └─ line ${i + 1} (new)\t: ${newLine} ✅`);
+          return newLine;
+        }
+        // Logger.warn(`  └─ line ${i + 1} (new)\t: ${newLine} ❌`);
+        return oldLine;
+      });
+
+      writeFileSync(file, sanitizedLines.join("\n"));
+    }
     rmSync(`.temp/request_fix_gender_${file.replaceAll("/", "_")}.json`);
     Logger.info(`Done: ${file}`);
     return true;
