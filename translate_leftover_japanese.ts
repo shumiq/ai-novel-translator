@@ -72,7 +72,7 @@ ${toBeTranslated.join("\n")}
   );
 
   execSync(
-    `opencode run "Translate leftover Japanese text to Thai" --model google/${appConfig.model.agent} --agent leftover-translator --thinking true -- --variant med`,
+    `opencode run "Translate leftover Japanese text to Thai" --model google/${appConfig.model.agent} --agent leftover-translator -- --variant med`,
     {
       stdio: "inherit",
       timeout: 1000 * 60 * 10,

@@ -199,7 +199,7 @@ export async function geminiCliRequest({
     ".temp/INSTRUCTION.md",
     [
       "You are operating in api-fallback-handler mode.",
-      "CRITICAL: Do not output the result in the chat. Save the final output directly to the file path: .temp/output.txt (always overwrite).",
+      "CRITICAL: Do NOT output the result as text in the chat. You MUST use the Write tool to save your complete output directly to the file .temp/output.txt (always overwrite). Do NOT use echo, cat, or any other method — use the Write tool only.",
       "",
       ...instruction.split("\n").map((line) => line.trim()),
     ].join("\n"),
@@ -208,7 +208,7 @@ export async function geminiCliRequest({
     ".temp/PROMPT.md",
     [
       "You are operating in api-fallback-handler mode.",
-      "CRITICAL: Do not output the result in the chat. Save the final output directly to the file path: .temp/output.txt (always overwrite).",
+      "CRITICAL: Do NOT output the result as text in the chat. You MUST use the Write tool to save your complete output directly to the file .temp/output.txt (always overwrite). Do NOT use echo, cat, or any other method — use the Write tool only.",
       "",
       ...prompt.split("\n").map((line) => line.trim()),
       "",
@@ -223,8 +223,8 @@ export async function geminiCliRequest({
     try {
       const prompt =
         runner === "gemini"
-          ? `agy --prompt "Follow instruction in .temp/PROMPT.md . Ensure you save your output in .temp/output.txt"`
-          : `opencode run "Act as api-fallback-handler agent. Follow instruction in .temp/PROMPT.md. Save your output in .temp/output.txt" --model google/${appConfig.model.agent} --thinking true --variant med --agent api-fallback-handler`;
+          ? `agy --prompt "Follow instruction in .temp/PROMPT.md . Use the Write tool to save your output in .temp/output.txt"`
+          : `opencode run "Act as api-fallback-handler agent. Read .temp/PROMPT.md and follow its instructions. You MUST use the Write tool to save your complete output to .temp/output.txt. Do NOT output text in chat." --model google/${appConfig.model.agent} --variant med --agent api-fallback-handler`;
       execSync(prompt, {
         stdio: "inherit",
         timeout: 1000 * 60 * 10,
