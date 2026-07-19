@@ -15,9 +15,9 @@ export const sanitizeFile = (
   const rawHTML = readFileSync(filePath, "utf-8");
   if (options?.onlyThai && !isThai(rawHTML)) return false;
   if (options?.onlyNotJapanese && isJapanese(rawHTML)) return false;
-  const sanitized = sanitize(rawHTML);
+  const sanitized = sanitize(rawHTML, { noReplace: options?.noReplace });
   if (!sanitized.trim()) return false;
-  writeFileSync(filePath, sanitize(rawHTML));
+  writeFileSync(filePath, sanitized);
   return true;
 };
 
@@ -34,6 +34,7 @@ export const sanitize = (
       .filter(Boolean);
     if (lines.length === 0) return "";
     return lines
+      .filter((line) => line.trim())
       .map(
         (line) =>
           `<p>${
@@ -44,7 +45,6 @@ export const sanitize = (
                   .replaceAll("<", "&lt;")
                   .replaceAll(">", "&gt;")
               : line
-                  .trim()
                   .replaceAll("&", "&amp;")
                   .replaceAll("<", "&lt;")
                   .replaceAll(">", "&gt;")
