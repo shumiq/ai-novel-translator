@@ -38,15 +38,18 @@ export async function extraction(file: string) {
     );
     const processedChunk = rawLines.slice(chunkStart, chunkEnd).join("\n");
     if (processedChunk.length === 0) {
-      Logger.info(
-        `No more content to extract. Ending process for ${file}.`,
-      );
+      Logger.info(`No more content to extract. Ending process for ${file}.`);
       break;
     }
     Logger.debug(`  Chunk ${chunk + 1} (lines ${chunkStart + 1}-${chunkEnd})`);
     const previousChunk =
       chunk > 0
-        ? rawLines.slice(Math.max(0, chunkStart - appConfig.previousChunk), chunkStart).join("\n")
+        ? rawLines
+            .slice(
+              Math.max(0, chunkStart - appConfig.previousChunk),
+              chunkStart,
+            )
+            .join("\n")
         : previousContent;
 
     if (!existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`)) {
@@ -78,11 +81,15 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
     ${JSON.stringify(existedWords)}
     </existed_words_reference>
     
-    ${allExtractedItems.length > 0 ? `<previously_extracted>
+    ${
+      allExtractedItems.length > 0
+        ? `<previously_extracted>
     ${JSON.stringify(allExtractedItems)}
     </previously_extracted>
     
-    ` : ""}Instruction: Extract ONLY new or updated high-impact terms from the original_text above. Use the previous_chapter for context on recurring characters and terms. Do not extract common dictionary words or chapter titles. Avoid duplicating terms already in previously_extracted. Output in JSON.`,
+    `
+        : ""
+    }Instruction: Extract ONLY new or updated high-impact terms from the original_text above. Use the previous_chapter for context on recurring characters and terms. Do not extract common dictionary words or chapter titles. Avoid duplicating terms already in previously_extracted. Output in JSON.`,
         body: {
           generationConfig: {
             responseMimeType: "application/json",
@@ -183,14 +190,18 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
 
     if (existsSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`))
       rmSync(`.temp/extraction_${file.replaceAll("/", "_")}.json`);
-    if (existsSync(`.temp/request_extraction_${file.replaceAll("/", "_")}.json`))
+    if (
+      existsSync(`.temp/request_extraction_${file.replaceAll("/", "_")}.json`)
+    )
       rmSync(`.temp/request_extraction_${file.replaceAll("/", "_")}.json`);
 
     chunk++;
     chunkOffset = 0;
 
     if (chunkStart + appConfig.chunkSize >= rawLines.length) {
-      Logger.debug(`All chunks processed. Processing ${allExtractedItems.length} total terms...`);
+      Logger.debug(
+        `All chunks processed. Processing ${allExtractedItems.length} total terms...`,
+      );
       break;
     }
   }
@@ -205,8 +216,7 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
   for (const item of allExtractedItems) {
     let { name, type, ...rest } = item;
     name = name.toLowerCase();
-    if (/[０-９]/.test(name) && JSON.stringify(rest).includes("ตอน"))
-      continue;
+    if (/[０-９]/.test(name) && JSON.stringify(rest).includes("ตอน")) continue;
     if (currentData[name]) {
       Logger.debug(`Skip existing term: ${name}`);
       continue;
@@ -231,9 +241,7 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
   }
 
   if (hasEmptyTranslations) {
-    Logger.debug(
-      `  └─ some terms had empty translations after filtering.`,
-    );
+    Logger.debug(`  └─ some terms had empty translations after filtering.`);
   }
 
   writeFileSync("novel_data.json", JSON.stringify(currentData, null, 2));
