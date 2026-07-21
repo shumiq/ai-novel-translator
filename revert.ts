@@ -13,7 +13,7 @@ if (!episode) {
 
 const src = join(novelConfig.originalPath, `${episode}.json`);
 
-if(!novelConfig.originalPath) {
+if (!novelConfig.originalPath) {
   Logger.error("Original path is not defined in novelConfig.");
   process.exit(1);
 }

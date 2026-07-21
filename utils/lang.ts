@@ -14,9 +14,9 @@ export const isThai = (text: string) =>
       .map((line) => line.replaceAll("<p>", "").replaceAll("</p>", "").trim())
       .filter(
         (line) =>
-          line.trim() &&
-          !/\p{Script=Thai}/u.test(line) &&
-          /\p{Script=Latin}/u.test(line),
+          line.replaceAll(/&.*?;/g, "").trim() &&
+          !/\p{Script=Thai}/u.test(line.replaceAll(/&.*?;/g, "")) &&
+          /\p{Script=Latin}/u.test(line.replaceAll(/&.*?;/g, "")),
       ).length < 10);
 
 export const isEnglish = (text: string) => {

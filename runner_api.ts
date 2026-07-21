@@ -75,7 +75,8 @@ export const runnerAPI = async () => {
 
         if (
           existsSync(finalOutputFile) &&
-          isThai(readFileSync(finalOutputFile, "utf-8"))
+          (!appConfig.validation.isThai ||
+            isThai(readFileSync(finalOutputFile, "utf-8")))
         ) {
           writeFileSync(file, readFileSync(finalOutputFile, "utf-8"));
 
