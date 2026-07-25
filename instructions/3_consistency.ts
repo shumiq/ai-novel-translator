@@ -32,7 +32,13 @@ export async function consistencyCheck(file: string) {
 
   Logger.info(`Consistency check: ${file}`);
 
-  const existedWords = extractExistedWords(originalHtml);
+  const isThaiPipeline =
+    !appConfig.pipeline.includes("extraction") &&
+    !appConfig.pipeline.includes("translation");
+  const existedWords = extractExistedWords(
+    originalHtml,
+    isThaiPipeline ? { searchByThai: true, genderOnly: true } : undefined,
+  );
 
   let chunk = 0;
   let chunkOffset = 0;

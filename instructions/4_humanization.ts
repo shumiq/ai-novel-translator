@@ -35,7 +35,13 @@ export async function humanization(file: string) {
 
   Logger.info(`Humanization: ${file}`);
 
-  const existedWords = extractExistedWords(originalHtml);
+  const isThaiPipeline =
+    !appConfig.pipeline.includes("extraction") &&
+    !appConfig.pipeline.includes("translation");
+  const existedWords = extractExistedWords(
+    originalHtml,
+    isThaiPipeline ? { searchByThai: true, genderOnly: true } : undefined,
+  );
   const consistencyCheckedHTML = readFileSync(getSourceFile(file), "utf-8");
 
   let chunk = 0;

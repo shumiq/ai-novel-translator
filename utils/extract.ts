@@ -64,11 +64,13 @@ export function extractNonThai() {
 }
 
 export function extractThai() {
-  return getAllFiles().filter((file) => {
-    const rawHTML = readFileSync(file, "utf-8");
-    if (!isThai(rawHTML)) return false;
-    return true;
-  });
+  return getAllFiles()
+    .filter((file) => {
+      const rawHTML = readFileSync(file, "utf-8");
+      if (!isThai(rawHTML)) return false;
+      return true;
+    })
+    .sort(chapterSortFn);
 }
 
 export function getPreviousChapterContent(

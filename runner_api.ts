@@ -1,5 +1,11 @@
 import { execSync } from "child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
 import { appConfig, novelConfig } from "./config";
 import { extraction } from "./instructions/1_extraction";
 import { translation } from "./instructions/2_translation";
@@ -92,6 +98,10 @@ export const runnerAPI = async () => {
 
           Logger.info(`Successfully completed: ${file}`);
 
+          if (appConfig.pipeline.includes("humanization")) {
+            appendFileSync(".temp/humanized.txt", `${file}\n`);
+          }
+
           execSync(`git add "${file}"`);
 
           removeFirstFromQueue();
@@ -111,6 +121,17 @@ export const runnerAPI = async () => {
       }
     } catch (e) {
       Logger.warn(`Found error on ${file}. Skipping this file.`);
+      // Clean up temp files for this file
+      const safeName = file.replaceAll("/", "_");
+      for (const prefix of [
+        "extraction_",
+        "translated_",
+        "consistency_checked_",
+        "final_humanized_",
+      ]) {
+        const p = `.temp/${prefix}${safeName}`;
+        if (existsSync(p)) rmSync(p);
+      }
       removeFirstFromQueue();
       continue;
     }

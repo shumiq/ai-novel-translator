@@ -9,5 +9,8 @@ if (!existsSync("./novel_data.json")) {
   writeFileSync("./novel_data.json", "{}");
 }
 ensureSkipFile();
+if (!existsSync(".temp/humanized.txt")) {
+  writeFileSync(".temp/humanized.txt", "");
+}
 
 await runnerAPI();

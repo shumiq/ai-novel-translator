@@ -112,3 +112,79 @@ The top-level agent (this file) should:
 - If the request involves cleaning up leftover English/Japanese text in translated HTML files → delegate to `leftover-translator`
 - If the request involves fixing unbalanced Japanese quotes in HTML files (`「`/`」`/`『`/`』`) → delegate to `japanese-quote-fixer`
 - If unsure, ask the user which role they need
+
+---
+
+# Build-mode Agent Instructions
+
+## Runtime and toolchain
+
+- **Runtime:** Bun (not Node). Scripts are plain `.ts` files executed with `bun <file>.ts`.
+- **Module system:** ES modules (`"type": "module"` in package.json). Never use `require()`.
+- **TypeScript:** ESNext target, `"module": "Preserve"`, `"moduleResolution": "bundler"`. Strict mode enabled.
+- **Formatter:** Prettier. Run `bun run prettier --write .` (alias: `bun run format`).
+- **Type-check:** `bun run tsc --noEmit` (alias: `bun run typecheck`). No build step — `"noEmit": true`.
+
+## Post-change checklist
+
+1. `bun run tsc --noEmit` — must pass with zero errors
+2. `bun run prettier --write .` — must be run after every edit
+3. For pipeline logic changes: `bun prepare.ts && bun init_queue.ts && bun runner.ts` to verify end-to-end
+
+## Project architecture
+
+### Pipeline (4-pass, orchestrated by `runner_api.ts`)
+
+1. **Extraction** (`instructions/1_extraction.ts`) — AI extracts character names, locations, terminology into `novel_data.json` (the shared dictionary).
+2. **Translation** (`instructions/2_translation.ts`) — Japanese/English → Thai translation using the dictionary.
+3. **Consistency** (`instructions/3_consistency.ts`) — Fixes dictionary mismatches across translated text.
+4. **Humanization** (`instructions/4_humanization.ts`) — Polishes Thai output for naturalness.
+
+Entry points: `bun prepare.ts` → `bun init_queue.ts` → `bun runner.ts` → `bun finalize.ts` (or `start.bat` for the full loop).
+
+### File formats
+
+- **HTML files** in `books/` use `<p>line</p>` markup, one line per `<p>` tag. **1:1 line correspondence between input and output is enforced** — validation will fail and restart the pipeline if line counts mismatch.
+- **Dictionary** (`novel_data.json`): JSON object keyed by lowercase Japanese term. Each entry has `translations` (Thai array), `description`, and optionally `gender`, `base_style`, `negative_constraints`, `example`.
+
+### Temp directory (`.temp/`)
+
+Ephemeral working directory. All intermediate state lives here:
+
+- `queue.txt` — Newline-separated files pending processing (populated by `init_queue.ts`)
+- `skip.txt` — Files that failed validation or hit prohibited content
+- `humanized.txt` — Files that completed humanization (excluded from re-queue)
+- `novel_files.json` — Cached file list (refreshed by `getAllFiles({ force: true })`)
+- Per-file intermediates: `extraction_<name>`, `translated_<name>`, `consistency_checked_<name>`, `final_humanized_<name>`
+- API key rotation: `<key>` sentinel files (deleted after 1 hour)
+
+### API and AI calls
+
+- All AI requests go through `utils/ai.ts` → `utils/gemini.ts`.
+- API keys come from `.env` via `GEMINI_API_KEY` (comma-separated for rotation).
+- On 429: current key is marked used (sentinel file in `.temp/`), retries with next key.
+- On 503: retries up to 5 times with 5s delay, then falls back to CLI mode.
+- On PROHIBITED_CONTENT: either throws `ProhibitedContentError` (skips file) or falls back to CLI.
+- CLI fallback invokes `opencode run` with the `api-fallback-handler` agent.
+
+### Key conventions
+
+- **Imports:** Use relative paths (`../utils/gemini`). The `@utils/*` path alias exists in tsconfig but codebase uses relative imports.
+- **Error handling:** Typed errors from `utils/gemini.ts` (`ProhibitedContentError`, `HighDemandError`). Pipeline catches and skips on errors.
+- **Logging:** Use `utils/logger.ts` — `Logger.info()`, `Logger.warn()`, `Logger.error()`, `Logger.debug()` (debug gated by `appConfig.debug`).
+- **Validation:** `utils/validate.ts` checks line count, Thai detection, bracket/parenthesis matching, and starting character type. Controlled by `appConfig.validation` flags.
+- **Sanitization:** `utils/sanitize.ts` strips HTML to `<p>` lines, normalizes Japanese punctuation (quotes → `"`, brackets → `[...]`, fullwidth digits → ASCII, Thai digits → ASCII, etc.).
+- **Git auto-commit:** `runner_api.ts` runs `git add` on successfully translated files. Dictionary changes are also auto-staged.
+
+### Configuration (`config.ts`)
+
+- `novelConfig` — Novel metadata: paths, language, title, additional context for extraction.
+- `appConfig` — Runtime settings: mode (`api`/`agent`), models, pipeline steps, validation flags, chunk sizes, debug toggle.
+
+### Important gotchas
+
+- `start.bat` loops: if `runner.ts` exits non-zero (files remaining in queue/skip), it re-runs the entire pipeline. The loop limit is 10 files per `runner.ts` invocation.
+- `isThai()` in `utils/lang.ts` is not a simple script check — it also counts Japanese character density to avoid false positives on mixed-script content.
+- `extractLinesFromHtml()` (in `utils/text.ts`) is the canonical way to get content lines from HTML. Don't parse `<p>` tags manually.
+- New instruction steps follow the naming convention `N_name.ts` in `instructions/` (currently 0–4, 99).
+- Books can be flat (`books/001.html`) or EPUB-organized (`books/<epub>/OEBPS/001.xhtml`). Sorting uses `content.opf` order for EPUB files.
