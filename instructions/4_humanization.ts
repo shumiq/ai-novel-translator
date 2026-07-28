@@ -78,18 +78,23 @@ export async function humanization(file: string) {
         ? result.slice(-appConfig.previousChunk).join("\n")
         : previousContent;
     const request = {
-      instruction: `You are a highly skilled Native Thai Novelist and Literary Editor.
-TASK: Humanize and polish the translated Thai text so it reads naturally, beautifully, and emotionally, like a published novel.
+      instruction: `You are a Thai native speaker helping clean up a machine-translated novel for personal reading. The goal is readability, NOT literary polish — just make it sound like natural, everyday Thai.
 
-CONSTRAINTS:
-1. Structural Integrity (CRITICAL): NEVER alter, merge, or remove HTML tags (<p>, <div>, etc.). The exact line count and tag structure must perfectly match the original text.
-2. Naturalize Sentences: Fix literal translations that sound robotic or unnatural in Thai. Rearrange awkward sentence structures to read smoothly.
-3. Artifact & Clutter Eradication: Remove all leftover ${novelConfig.originalLanguage} characters/punctuation (e.g., 、 , 。) and eliminate redundant bracketed translations (e.g., change 'พล็อตคลาสสิก (Template)' to just 'พล็อตคลาสสิก').
-4. Dialogue & Particle Optimization: Ensure dialogue flows like a real Thai conversation. Reduce repetitive particles (e.g., ending every single sentence with "ครับ/ค่ะ/จ๊ะ") and simplify excessive Royal Vocabulary (คำราชาศัพท์ไทย) for modern readability.
-5. Fix Word Choice: Replace unnatural word choices with idiomatic Thai expressions while keeping the <existed_words_reference> terminology intact.
-6. No Parentheses: Do not add parentheses in translations unless the original text contains parentheses.
-7. Keep all HTML escaping intact (e.g., &amp;, &lt;, &gt;). Do not convert them back to symbols.
-8. Output ONLY the polished HTML code. No markdown tags, no conversational filler.
+RULES:
+1. NEVER change the line count or HTML tags (<p>). What goes in, same number of lines must come out.
+2. Remove leftover ${novelConfig.originalLanguage} characters (e.g., 、 。) and unnecessary bracketed text like 'word (translation)' → just 'word'.
+3. Fix awkward/stiff phrasing ONLY if it clearly sounds like a machine wrote it. If a sentence already reads fine, do NOT touch it.
+4. Do NOT add words, embellish, or make sentences longer. Do NOT rewrite for style or beauty.
+5. Do NOT add parentheses unless the original has them.
+6. Keep HTML entities (&amp; &lt; &gt;) as-is.
+7. Output ONLY the HTML. No explanations.
+
+DIALOGUE & PARTICLES:
+- Dialogue must sound like how real Thai people talk in casual conversation, not formal writing.
+- Match particles to character gender: Male speakers use ครับ/นะ/วะ/เว้ย/etc. Female speakers use ค่ะ/คะ/สิ/ยะ/etc. If the character's gender is clear from context, use the correct set.
+- Avoid overly formal/royal vocabulary (คำราชาศัพท์) in casual dialogue — use plain Thai instead.
+- If a character ends every single line with the same particle (e.g., always ครับ), drop the particle on some lines to sound more natural. Real people don't repeat particles that consistently.
+- Exclamations and reactions should sound punchy and conversational, not stiff.
 
 Additional Context: 
 ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
@@ -112,7 +117,7 @@ ${translatedChunk}
 ${JSON.stringify(existedWords)}
 </existed_words_reference>
 
-${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instruction: Rewrite and humanize the <translated_text> for superior Thai literary flow while maintaining flawless structural integrity. Use the previous_chapter to maintain narrative continuity and character voice consistency. Output ONLY the finalized HTML with exactly ${countLines(translatedChunk)} lines.`,
+${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instruction: Light cleanup of <translated_text> for personal readability. Fix only robotic phrasing and remove artifacts. If the text already reads naturally, keep it unchanged. Do NOT rewrite for style. Output ONLY the HTML with exactly ${countLines(translatedChunk)} lines.`,
     };
     writeFileSync(
       `.temp/request_final_humanized_${file.replaceAll("/", "_")}.json`,
