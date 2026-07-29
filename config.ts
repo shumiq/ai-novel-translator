@@ -32,6 +32,7 @@ export const appConfig = {
     quouteCount: false,
     parenthesesCount: true,
     startCharacter: true,
+    badCharacter: false,
   },
   debug: false,
 };

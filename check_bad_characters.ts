@@ -1,55 +1,8 @@
-// this script will run by either `bun check_bad_characters.ts` or `bun check_bad_characters.ts --all`
-
-// when not --all
-// check all changes files in books folder using git commit both staged and unstaged changes
-// when --all
-// use extractThai
-
-// for each file, read content and check if it has other characters aside from Thai, English, numbers, and special characters, if it has, log the file name and the line number and the line content
-
 import { execSync } from "child_process";
 import { readFileSync } from "fs";
 import { extractThai } from "./utils/extract";
-import { extractLinesFromHtml } from "./utils/text";
 import { Logger } from "./utils/logger";
-import { isThai } from "@utils/lang";
-
-// Characters we explicitly allow:
-// - Thai script
-// - Latin (English) letters
-// - ASCII digits
-// - Common punctuation: quotes, parentheses, brackets, colon, semicolon,
-//   comma, period, exclamation/question marks, dash, slash, backslash, pipe,
-//   at sign, hash, ampersand, percent, equals, plus, asterisk, tilde, grave,
-//   curly braces, underscore, non-breaking space
-// - Smart quotes, em dash, en dash, ellipsis, middle dot, ideographic comma/period,
-//   fullwidth parentheses, zero-width non-joiner
-const BAD_CHAR_RE =
-  /[^\p{Script=Thai}\p{Script=Latin}0-9 \t!"'\.\?\(\)\[\]:~—,/ー\-%&※+★><○■*#=αβΘΩ＊◇•→|△●@$^_◆＝≧÷《》]/gu;
-
-function checkFile(filePath: string): number {
-  let issues = 0;
-  const rawHTML = readFileSync(filePath, "utf-8");
-  if (!isThai(rawHTML)) return issues;
-  const lines = extractLinesFromHtml(rawHTML);
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
-    const matches = line.match(BAD_CHAR_RE);
-    if (matches) {
-      const uniqueChars = [...new Set(matches)]
-        .map(
-          (c) =>
-            `"${c}" (U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")})`,
-        )
-        .join(", ");
-      Logger.warn(`${filePath}:${i + 1}: ${uniqueChars}`);
-      Logger.info(`  ${line}`);
-      issues++;
-    }
-  }
-  return issues;
-}
+import { checkBadCharacters } from "./utils/validate";
 
 // --- main ---
 
@@ -86,23 +39,20 @@ if (all) {
   Logger.info(`Checking ${files.length} changed file(s) in books/`);
 }
 
-let totalIssues = 0;
 let filesWithIssues = 0;
 
 for (const file of files) {
-  const issues = checkFile(file);
-  if (issues > 0) {
-    totalIssues += issues;
+  const content = readFileSync(file, "utf-8");
+  const error = checkBadCharacters(content, file);
+  if (error) {
     filesWithIssues++;
   }
 }
 
 console.log("");
-if (totalIssues === 0) {
+if (filesWithIssues === 0) {
   Logger.done("No bad characters found.");
 } else {
-  Logger.error(
-    `${totalIssues} line(s) with bad characters in ${filesWithIssues} file(s).`,
-  );
+  Logger.error(`Bad characters found in ${filesWithIssues} file(s).`);
   process.exitCode = 1;
 }
