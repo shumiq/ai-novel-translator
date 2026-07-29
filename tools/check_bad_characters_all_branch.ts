@@ -1,7 +1,7 @@
 // Name: Check Bad Characters (All Branches)
 // Description: Check for bad/unwanted characters across all git web/* branches
 import { execSync } from "child_process";
-import { writeFileSync } from "fs";
+import { rmSync, writeFileSync } from "fs";
 import { cleanGitState, execShell, getBranches } from "../utils/git";
 import { Logger } from "../utils/logger";
 
@@ -27,6 +27,7 @@ async function main(): Promise<void> {
   const issues: BranchIssue[] = [];
 
   for (const branch of branches) {
+    rmSync(".temp", { recursive: true, force: true });
     cleanGitState();
 
     Logger.info(`Checking branch ${branch}...`);

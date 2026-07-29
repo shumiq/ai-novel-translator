@@ -114,31 +114,8 @@ export function validate(
   return null;
 }
 
-// Characters we explicitly allow:
-// - Thai script
-// - Latin (English) letters
-// - ASCII digits
-// - Common ASCII punctuation: !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
-// - Unicode punctuation: …‥–—― ‼⁉‽ー━
-// - Smart/curly quotes: ' ' " " ‹› «»
-// - CJK punctuation: 、。・゛゜゠〜「」『』【】〔〕〈〉《》〖〗◤◢
-// - CJK/fullwidth variants: ＊＋－＝／＜＞＃＆％
-// - Math symbols: +−±×÷=≒≠≡≦≧≪≫∞∇∮∝√∂∫∑∏∠⊥∴∵≣≈
-// - Arrows: ←↑→↓↔↕⇒⇔
-// - Shapes: ○●◎◇◆□■△▲▽▼★☆✦✧♡
-// - Kaomoji / decorative faces: ᗜ╹ㅂ
-// - Playing card suits: ♠♣♥♦
-// - Music notes: ♪♩♫♬
-// - Superscripts: ¹²³⁴⁵⁶⁷⁸⁹⁰
-// - Subscripts: ₀₁₂₃₄₅₆₇₈₉
-// - Circled numbers: ①-⑳
-// - Parenthesized numbers: ㉑-㉟
-// - Circled ideographs: ㊱-㊿
-// - Currency: $¢£¥€₩฿₽₹￡
-// - Legal/branding: ©®™℗℠℡
-// - Miscellaneous: °·′″µ№※ℹℓ℃℉♂♀♰￥⇨
 export const BAD_CHAR_RE =
-  /[^\p{Script=Thai}\p{Script=Latin}0-9 \t!"#%&'\(\)\*\+,\-\.\/:;<=>\?@\[\\\]^_`{|}~¡¢£¥¦©®°±·¹²³⁴⁵⁶⁷⁸⁹⁰µ×÷‐–—―ー━｜＼＿…‥‼⁉ ′″‵‶‷‸‹›※‼⁽⁾₀₁₂₃₄₅₆₇₈₉€฿₩₽₹￡℃℉№™℗℠℡ℓ♠♣♥♦♪♩♫♬♡○●◎◇◆□■△▲▽▼★☆✦✧←↑→↓↔↕⇒⇔αβγδεζηθικλμνξοπρςστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ∇∝∞∟∠∡∢∣∥∧∨∩∪∫∬∭∮∵∴≈≒≠≡≣≤≥≦≧≪≫⊂⊃⊆⊇⊥∂√∑∏＊＋－／＝＜＞«»＃＆％゛゜゠〜「」〖〗『』【】〔〕〈〉《》◤◢、・•´ˊˋ｀̀́ㅂ╹ᗜ\u2460-\u2473\u3251-\u325F\u32B1-\u32BF─♂♀♰￥⇨]/gu;
+  /[^\p{Script=Thai}\p{Script=Latin}0-9 \t!"#%&'\(\)\*\+,\-\.\/:;<=>\?@\[\\\]^_`{|}~¡¢$＄£¥¦©®°±·¹²³⁴⁵⁶⁷⁸⁹⁰µ×÷‐–—―ー━｜＼＿…‥‼⁉ ′″‵‶‷‸‹›※‼⁽⁾₀₁₂₃₄₅₆₇₈₉€฿₩₽₹￡℃℉№™℗℠℡ℓ♠♣♥♦♪♩♫♬♡○●◎◇◆□■△▲▽▼★☆✦✧←↑→↓↔↕⇒⇔αβγδεζηθικλμνξοπρςστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ∇∝∞∟∠∡∢∣∥∧∨∩∪∫∬∭∮∵∴≈≒≠≡≣≤≥≦≧≪≫⊂⊃⊆⊇⊥∂√∑∏＊＋✕－／＝＜＞«»＃＆％゛゜゠〜「」〖〗『』【】〔〕〈〉《》◤◢、・•´ˊˋ｀̀́ㅂ╹ᗜ\u2460-\u2473\u3251-\u325F\u32B1-\u32BF\uFF9F\uFF9E─♂♀♰✩▹＾￥⇨†✝︎｡Д･з﹃дꙪ᎑╮╯╰╭┐˘◉￣˙꒳ㅿ∀ㅅ＠〃¯˃˂о╬﹏￤◁▷▶✓⚠✽❤✿◕‑−｛｝〘〙〚〛｟｠⁅⁆♢⚪︎◯┣┓┃┛]/gu;
 
 /**
  * Check HTML content for characters that fall outside the allowed set.
