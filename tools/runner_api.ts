@@ -1,3 +1,5 @@
+// Name: Runner API
+// Description: Core engine — orchestrates the 4-pass AI pipeline (extraction → translation → consistency → humanization)
 import { execSync } from "child_process";
 import {
   appendFileSync,
@@ -6,18 +8,18 @@ import {
   rmSync,
   writeFileSync,
 } from "fs";
-import { appConfig, novelConfig } from "./config";
-import { extraction } from "./instructions/1_extraction";
-import { translation } from "./instructions/2_translation";
-import { consistencyCheck } from "./instructions/3_consistency";
-import { humanization } from "./instructions/4_humanization";
-import { isThai } from "./utils/lang";
-import { Logger } from "./utils/logger";
+import { appConfig, novelConfig } from "../config";
+import { extraction } from "../instructions/1_extraction";
+import { translation } from "../instructions/2_translation";
+import { consistencyCheck } from "../instructions/3_consistency";
+import { humanization } from "../instructions/4_humanization";
+import { isThai } from "../utils/lang";
+import { Logger } from "../utils/logger";
 import {
   ensureTempDir,
   getNextFromQueue,
   removeFirstFromQueue,
-} from "./utils/temp";
+} from "../utils/temp";
 
 const getFinalFile = (file: string) => {
   const files = [
@@ -147,10 +149,10 @@ export const runnerAPI = async () => {
 
   if (novelConfig.originalLanguage === "Japanese") {
     Logger.info("  └─ translate_leftover_japanese");
-    execSync(`bun translate_leftover_japanese.ts`);
+    execSync(`bun tools/translate_leftover_japanese.ts`);
   } else {
     Logger.info("  └─ translate_leftover_english");
-    execSync(`bun translate_leftover_english.ts`);
+    execSync(`bun tools/translate_leftover_english.ts`);
   }
 
   Logger.done("Pipeline complete");

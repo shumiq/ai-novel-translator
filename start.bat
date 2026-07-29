@@ -1,10 +1,10 @@
 :loop
-bun prepare.ts
-bun init_queue.ts
-bun runner.ts
+bun tools/prepare.ts
+bun tools/init_queue.ts
+bun tools/runner.ts
 if %errorlevel% equ 0 (
-  bun finalize.ts
+  bun tools/finalize.ts
   exit /b 0
 )
-start /B bun finalize.ts
+start /B bun tools/finalize.ts
 goto loop

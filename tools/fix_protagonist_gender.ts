@@ -1,3 +1,5 @@
+// Name: Fix Protagonist Gender
+// Description: Fix protagonist gender references in translations using AI
 import {
   appendFileSync,
   existsSync,
@@ -6,13 +8,13 @@ import {
   rmSync,
   writeFileSync,
 } from "fs";
-import { appConfig, novelConfig } from "./config";
-import { aiRequest } from "./utils/ai";
-import { countLines } from "./utils/count_line";
-import { HighDemandError, ProhibitedContentError } from "./utils/gemini";
-import { Logger } from "./utils/logger";
-import { sanitize } from "./utils/sanitize";
-import { validate } from "./utils/validate";
+import { appConfig, novelConfig } from "../config";
+import { aiRequest } from "../utils/ai";
+import { countLines } from "../utils/count_line";
+import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
+import { Logger } from "../utils/logger";
+import { sanitize } from "../utils/sanitize";
+import { validate } from "../utils/validate";
 
 const FINISH_FILE = ".temp/fix_gender_finish.txt";
 
@@ -191,7 +193,7 @@ async function main() {
   const finished = loadFinished();
 
   // dynamically import extractThai to avoid circular dependency
-  const { extractThai } = await import("./utils/extract");
+  const { extractThai } = await import("../utils/extract");
   const files = extractThai().filter((f) => !finished.includes(f));
 
   if (files.length === 0) {

@@ -1,13 +1,14 @@
-import { execSync } from "child_process";
+// Name: Update Branches
+// Description: Rebase git branches and fetch new web chapters from upstream
 import { rmSync } from "fs";
-import { Logger } from "./utils/logger";
 import {
-  getBranches,
   cleanGitState,
   execShell,
+  getBranches,
   hasChanges,
   intFromShell,
-} from "./utils/git";
+} from "../utils/git";
+import { Logger } from "../utils/logger";
 
 const BRANCH_PREFIXES = ["web/*", "epub/*"] as const;
 
@@ -47,7 +48,7 @@ async function processBranch(branch: string): Promise<void> {
   }
 
   Logger.info(`Fetch new chapters for branch ${branch}...`);
-  await execShell("bun prepare.ts");
+  await execShell("bun tools/prepare.ts");
   rmSync(".temp", { recursive: true, force: true });
 
   if (!(await hasChanges())) {
@@ -57,7 +58,7 @@ async function processBranch(branch: string): Promise<void> {
   }
 
   Logger.info(`Committing changes for branch ${branch}...`);
-  await execShell('git add --all -- ":!update_branches.ts" ":!.temp"');
+  await execShell('git add --all -- ":!tools/update_branches.ts" ":!.temp"');
 
   if (!(await hasChanges())) {
     Logger.info(`  └─ nothing staged, skipping commit`);

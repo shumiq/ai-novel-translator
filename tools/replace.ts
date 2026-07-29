@@ -1,3 +1,5 @@
+// Name: Replace
+// Description: Interactive find-and-replace tool for searching text across HTML files
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
 import { createInterface } from "node:readline/promises";
@@ -6,7 +8,7 @@ import {
   escapeRegex,
   countOccurrences,
   highlightIn,
-} from "./utils/text";
+} from "../utils/text";
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 

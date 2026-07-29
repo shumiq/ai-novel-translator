@@ -36,11 +36,11 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 **Workflow:**
 
 1. Check project configuration (`config.ts`)
-2. Run `bun prepare.ts` to set up directories and convert JSON to HTML
-3. Run `bun init_queue.ts` to build a processing queue from non-Thai files
-4. Run `bun runner.ts` to execute the 4-pass AI pipeline (extraction → translation → consistency → humanization)
+2. Run `bun tools/prepare.ts` to set up directories and convert JSON to HTML
+3. Run `bun tools/init_queue.ts` to build a processing queue from non-Thai files
+4. Run `bun tools/runner.ts` to execute the 4-pass AI pipeline (extraction → translation → consistency → humanization)
 5. Handle retries via `queue.txt` and `skip.txt` for error recovery
-6. Run `bun finalize.ts` to convert Thai HTML back to JSON
+6. Run `bun tools/finalize.ts` to convert Thai HTML back to JSON
 
 ---
 
@@ -95,7 +95,7 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 
 **Workflow:**
 
-1. Run `bun translate_leftover_english.ts` or `bun translate_leftover_japanese.ts` to detect and translate leftover non-Thai lines
+1. Run `bun tools/translate_leftover_english.ts` or `bun tools/translate_leftover_japanese.ts` to detect and translate leftover non-Thai lines
 2. Each script scans translated HTML files, identifies non-Thai lines, writes a task list to `.temp/INSTRUCTION.md`, and dispatches the work via `opencode run --agent leftover-translator`
 3. The agent reads the instruction file, edits the specified files/line numbers directly, and preserves all HTML structure
 
@@ -129,7 +129,7 @@ The top-level agent (this file) should:
 
 1. `bun run tsc --noEmit` — must pass with zero errors
 2. `bun run prettier --write .` — must be run after every edit
-3. For pipeline logic changes: `bun prepare.ts && bun init_queue.ts && bun runner.ts` to verify end-to-end
+3. For pipeline logic changes: `bun tools/prepare.ts && bun tools/init_queue.ts && bun tools/runner.ts` to verify end-to-end
 
 ## Project architecture
 
@@ -140,7 +140,7 @@ The top-level agent (this file) should:
 3. **Consistency** (`instructions/3_consistency.ts`) — Fixes dictionary mismatches across translated text.
 4. **Humanization** (`instructions/4_humanization.ts`) — Polishes Thai output for naturalness.
 
-Entry points: `bun prepare.ts` → `bun init_queue.ts` → `bun runner.ts` → `bun finalize.ts` (or `start.bat` for the full loop).
+Entry points: `bun tools/prepare.ts` → `bun tools/init_queue.ts` → `bun tools/runner.ts` → `bun tools/finalize.ts` (or `start.bat` for the full loop).
 
 ### File formats
 

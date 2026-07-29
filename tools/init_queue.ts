@@ -1,8 +1,10 @@
+// Name: Init Queue
+// Description: Build the processing queue from non-Thai files for translation
 import { existsSync, readFileSync, writeFileSync } from "fs";
-import { appConfig } from "./config";
-import { extractNonThai, extractThai, getAllFiles } from "./utils/extract";
-import { Logger } from "./utils/logger";
-import { ensureTempDir, writeQueue } from "./utils/temp";
+import { appConfig } from "../config";
+import { extractNonThai, extractThai, getAllFiles } from "../utils/extract";
+import { Logger } from "../utils/logger";
+import { ensureTempDir, writeQueue } from "../utils/temp";
 
 ensureTempDir();
 

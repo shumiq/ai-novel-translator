@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "start": "./start.bat",
-    "sanitize": "bun sanitize_all.ts",
+    "sanitize": "bun tools/sanitize_all.ts",
+    "tools": "bun tools/tools.ts",
     "typecheck": "bun run tsc --noEmit",
     "format": "bun run prettier --write ."
   },

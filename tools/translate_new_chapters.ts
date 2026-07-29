@@ -1,14 +1,16 @@
+// Name: Translate New Chapters
+// Description: Translate newly fetched chapters from web/* branches using the full pipeline
 import { execSync } from "child_process";
 import { rmSync } from "fs";
-import { novelConfig } from "./config";
+import { novelConfig } from "../config";
 import {
   cleanGitState,
   execShell,
   getBranches,
   getLastCommitMessage,
   hasStagedChanges,
-} from "./utils/git";
-import { Logger } from "./utils/logger";
+} from "../utils/git";
+import { Logger } from "../utils/logger";
 
 const BRANCH_PREFIX = "web/*";
 const SELF_SCRIPT = "translate_new_chapters.ts";
@@ -49,7 +51,7 @@ async function main(): Promise<void> {
 
     try {
       if (novelConfig.originalLanguage === "Japanese") {
-        execSync(`bun merge_multiline_speech_jp.ts`, {
+        execSync(`bun tools/merge_multiline_speech_jp.ts`, {
           encoding: "utf-8",
           stdio: "inherit",
         });

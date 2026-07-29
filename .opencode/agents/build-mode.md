@@ -26,7 +26,7 @@ You are the build mode agent for the ai-novel-translator project. Your job is to
 ## Project Structure
 
 ```
-Root scripts:
+tools/               → Tool scripts (run with `bun tools/<name>.ts`)
   prepare.ts              → Set up directories, convert JSON to HTML
   init_queue.ts           → Build processing queue from non-Thai files
   runner.ts               → Pipeline entry point (creates .temp/, loads config)
@@ -40,6 +40,7 @@ Root scripts:
   check_quota.ts          → Check Gemini API quota across accounts
   update_branches.ts      → Rebase git branches and fetch new web chapters
   validate_dictionary.ts  → Check for Japanese entries in dictionary
+  (and more...)
 
 instructions/        → Pipeline step implementations (0 through 99)
   0_preparation.ts   → Directory/JSON/HTML conversion
@@ -62,10 +63,10 @@ utils/               → Shared utilities
    - `bun run tsc --noEmit` — Type-check without emitting
    - `bun run prettier --write .` — Format all files with Prettier
 4. Verify changes work with the existing pipeline:
-   - `bun prepare.ts` to test preparation
-   - `bun init_queue.ts` to build/refresh the processing queue
-   - `bun runner.ts` to test the pipeline (will process pending files from queue)
-   - `bun finalize.ts` to test finalization
+   - `bun tools/prepare.ts` to test preparation
+   - `bun tools/init_queue.ts` to build/refresh the processing queue
+   - `bun tools/runner.ts` to test the pipeline (will process pending files from queue)
+   - `bun tools/finalize.ts` to test finalization
 
 ## Important Rules
 

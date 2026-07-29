@@ -1,11 +1,13 @@
+// Name: Merge Multi-line Speech (JP)
+// Description: Merge multi-line Japanese speech segments in HTML files before translation
 import { execSync } from "child_process";
 import { Glob } from "bun";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { isThai } from "./utils/lang";
-import { Logger } from "./utils/logger";
-import { appConfig } from "./config";
-import { isLineCloseQuote, findProblematicLines } from "./utils/japanese";
-import { ensureTempDir } from "./utils/temp";
+import { isThai } from "../utils/lang";
+import { Logger } from "../utils/logger";
+import { appConfig } from "../config";
+import { isLineCloseQuote, findProblematicLines } from "../utils/japanese";
+import { ensureTempDir } from "../utils/temp";
 
 const glob = new Glob("books/**/*html");
 

@@ -1,10 +1,12 @@
+// Name: Translate Leftover Japanese
+// Description: Translate leftover Japanese text in translated Thai HTML files to Thai
 import { execSync } from "child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { appConfig } from "./config";
-import { extractThai } from "./utils/extract";
-import { isJapanese } from "./utils/lang";
-import { Logger } from "./utils/logger";
-import { ensureTempDir } from "./utils/temp";
+import { appConfig } from "../config";
+import { extractThai } from "../utils/extract";
+import { isJapanese } from "../utils/lang";
+import { Logger } from "../utils/logger";
+import { ensureTempDir } from "../utils/temp";
 
 function getJapaneseLines(text: string) {
   return text

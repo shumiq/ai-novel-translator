@@ -1,13 +1,15 @@
+// Name: Revert
+// Description: Revert a chapter back to its original (untranslated) source
 import { cpSync, existsSync, unlinkSync } from "fs";
 import { join } from "path";
-import { novelConfig } from "./config";
-import { preparation } from "./instructions/0_preparation";
-import { Logger } from "./utils/logger";
+import { novelConfig } from "../config";
+import { preparation } from "../instructions/0_preparation";
+import { Logger } from "../utils/logger";
 
 const episode = process.argv[2];
 
 if (!episode) {
-  Logger.error("Usage: bun revert.ts <episode>");
+  Logger.error("Usage: bun tools/revert.ts <episode>");
   process.exit(1);
 }
 

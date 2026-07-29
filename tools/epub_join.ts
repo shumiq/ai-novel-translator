@@ -1,3 +1,5 @@
+// Name: EPUB Join
+// Description: Join split EPUB part files (part_1, part_2, etc.) back into single files
 import { readFileSync, writeFileSync, unlinkSync } from "fs";
 import { Glob } from "bun";
 

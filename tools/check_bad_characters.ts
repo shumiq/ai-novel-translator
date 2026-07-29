@@ -1,8 +1,10 @@
+// Name: Check Bad Characters
+// Description: Check for bad/unwanted characters in translated Thai files
 import { execSync } from "child_process";
 import { readFileSync } from "fs";
-import { extractThai } from "./utils/extract";
-import { Logger } from "./utils/logger";
-import { checkBadCharacters } from "./utils/validate";
+import { extractThai } from "../utils/extract";
+import { Logger } from "../utils/logger";
+import { checkBadCharacters } from "../utils/validate";
 
 // --- main ---
 

@@ -1,5 +1,7 @@
+// Name: Adjust English Lines
+// Description: Adjust English lines in HTML files by applying sanitization rules
 import { readFileSync, writeFileSync } from "fs";
-import { adjustEnglishLines } from "./utils/sanitize";
+import { adjustEnglishLines } from "../utils/sanitize";
 
 const targetFiles: string[] = [];
 

@@ -1,3 +1,5 @@
+// Name: Sync Database
+// Description: Sync translation database — extract and translate new Japanese terms using AI
 import { execSync } from "child_process";
 import {
   appendFileSync,
@@ -7,15 +9,15 @@ import {
   rmSync,
   writeFileSync,
 } from "fs";
-import { novelConfig } from "./config";
-import { aiRequest } from "./utils/ai";
-import { extractExistedWords } from "./utils/dictionary";
-import { HighDemandError, ProhibitedContentError } from "./utils/gemini";
-import { isJapanese } from "./utils/lang";
-import { Logger } from "./utils/logger";
-import { sanitize } from "./utils/sanitize";
-import type { Dictonary } from "./utils/types";
-import { ensureTempDir } from "./utils/temp";
+import { novelConfig } from "../config";
+import { aiRequest } from "../utils/ai";
+import { extractExistedWords } from "../utils/dictionary";
+import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
+import { isJapanese } from "../utils/lang";
+import { Logger } from "../utils/logger";
+import { sanitize } from "../utils/sanitize";
+import type { Dictonary } from "../utils/types";
+import { ensureTempDir } from "../utils/temp";
 
 async function syncDatabase() {
   ensureTempDir();

@@ -1,3 +1,5 @@
+// Name: Check Quota
+// Description: Check Gemini API quota usage across all configured accounts
 import { readFileSync } from "node:fs";
 
 const CLIENT_ID = process.env.CLIENT_ID || "";

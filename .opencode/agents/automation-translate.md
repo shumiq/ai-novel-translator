@@ -15,7 +15,7 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 
 ### 1. Preparation
 
-- Run `bun prepare.ts` to:
+- Run `bun tools/prepare.ts` to:
   - Create directories (`./json`, `./books`, `.temp`)
   - Copy JSON files from source paths to `./json/`
   - Set up `novel_data.json` dictionary (copy from `dictionaryPath` or create empty)
@@ -24,14 +24,14 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 
 ### 2. Queue Initialization
 
-- Run `bun init_queue.ts` to:
+- Run `bun tools/init_queue.ts` to:
   - Scan all HTML files in `books/` for non-Thai content
   - Build a processing queue in `.temp/queue.txt`
   - Resume from existing queue if one exists (supports restart)
 
 ### 3. Translation Pipeline (via runner.ts)
 
-- Run `bun runner.ts` to execute the 4-pass pipeline on each file from the queue:
+- Run `bun tools/runner.ts` to execute the 4-pass pipeline on each file from the queue:
   - **Pass 1 — Extraction:** Extracts character names, terminology from source and updates dictionary using structured JSON schema
   - **Pass 2 — Translation:** Translates Japanese HTML to Thai in chunks with 1:1 line correspondence
   - **Pass 3 — Consistency:** Enforces dictionary terminology and character voice
@@ -50,7 +50,7 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 
 ### 5. Finalization
 
-- Run `bun finalize.ts` to:
+- Run `bun tools/finalize.ts` to:
   - Convert translated Thai HTML back to JSON chapters
   - Update `meta.json` with chapter titles
   - Copy JSON files to the configured output path
