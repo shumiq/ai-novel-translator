@@ -54,6 +54,7 @@ async function main(): Promise<void> {
     cleanGitState();
   }
 
+  rmSync(".temp", { recursive: true, force: true });
   await execShell("git checkout main -f");
 
   if (issues.length === 0) {
