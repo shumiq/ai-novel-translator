@@ -118,6 +118,14 @@ export const BAD_CHAR_RE =
   /[^\p{Script=Thai}\p{Script=Latin}0-9 \t!"#%&'\(\)\*\+,\-\.\/:;<=>\?@\[\\\]^_`{|}~¡¢$＄£¥¦©®°±·¹²³⁴⁵⁶⁷⁸⁹⁰µ×÷‐–—―ー━｜＼＿…‥‼⁉ ′″‵‶‷‸‹›※‼⁽⁾₀₁₂₃₄₅₆₇₈₉€฿₩₽₹￡℃℉№™℗℠℡ℓ♠♣♥♦♪♩♫♬♡○●◎◇◆□■△▲▽▼★☆✦✧←↑→↓↔↕⇒⇔αβγδεζηθικλμνξοπρςστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ∇∝∞∟∠∡∢∣∥∧∨∩∪∫∬∭∮∵∴≈≒≠≡≣≤≥≦≧≪≫⊂⊃⊆⊇⊥∂√∑∏＊＋✕－／＝＜＞«»＃＆％゛゜゠〜「」〖〗『』【】〔〕〈〉《》◤◢、・•´ˊˋ｀̀́ㅂ╹ᗜ\u2460-\u2473\u3251-\u325F\u32B1-\u32BF\uFF9F\uFF9E─♂♀♰✩▹＾￥⇨†✝︎｡Д･з﹃дꙪ᎑╮╯╰╭┐˘◉￣˙꒳ㅿ∀ㅅ＠〃¯˃˂о╬﹏￤◁▷▶✓⚠✽❤✿◕‑−｛｝〘〙〚〛｟｠⁅⁆♢⚪︎◯┣┓┃┛]/gu;
 
 /**
+ * Matches a Thai character immediately adjacent to a Latin character
+ * (e.g. "textภาษา" or "ภาษาtext"). English and Thai should be separated
+ * by a space or symbol, so side-by-side is likely an issue.
+ */
+export const MIXED_SCRIPT_RE =
+  /\p{Script=Latin}\p{Script=Thai}|\p{Script=Thai}\p{Script=Latin}/gu;
+
+/**
  * Check HTML content for characters that fall outside the allowed set.
  * Logs warnings for each issue found, with the line number and characters.
  *
@@ -145,6 +153,16 @@ export function checkBadCharacters(
         )
         .join(", ");
       Logger.warn(`${context ?? "content"}:${i + 1}: ${uniqueChars}`);
+      Logger.info(`  ${line}`);
+      issues++;
+    }
+
+    const mixedMatches = line.match(MIXED_SCRIPT_RE);
+    if (mixedMatches) {
+      const uniquePairs = [...new Set(mixedMatches)].join(", ");
+      Logger.warn(
+        `${context ?? "content"}:${i + 1}: Thai/English adjacent without separator: ${uniquePairs}`,
+      );
       Logger.info(`  ${line}`);
       issues++;
     }
