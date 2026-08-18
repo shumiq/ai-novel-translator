@@ -41,9 +41,10 @@ async function main() {
     return;
   }
 
-  const stagedRaw = execSync("git diff --cached --name-only -- books/", {
-    encoding: "utf-8",
-  });
+  const stagedRaw = execSync(
+    "git -c core.quotepath=false diff --cached --name-only -- books/",
+    { encoding: "utf-8" },
+  );
   const stagedFiles = String(stagedRaw)
     .split("\n")
     .map((s) => s.trim())
@@ -62,9 +63,10 @@ async function main() {
   for (const file of stagedFiles) {
     let originalContent: string;
     try {
-      originalContent = execSync(`git show "HEAD:${file}"`, {
-        encoding: "utf-8",
-      }).toString();
+      originalContent = execSync(
+        `git -c core.quotepath=false show "HEAD:${file}"`,
+        { encoding: "utf-8" },
+      ).toString();
     } catch {
       console.log(`  Skipping ${file} (not found in HEAD, likely new file).`);
       continue;
