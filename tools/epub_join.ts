@@ -2,6 +2,7 @@
 // Description: Join split EPUB part files (part_1, part_2, etc.) back into single files
 import { readFileSync, writeFileSync, unlinkSync } from "fs";
 import { Glob } from "bun";
+import { appConfig } from "../config";
 
 const PART_RE = /^(.+)\.part_(\d+)\.(html|xhtml)$/;
 
@@ -35,7 +36,10 @@ export function epubJoin() {
     }
 
     const originalPath = `${base}.${ext}`;
-    writeFileSync(originalPath, allLines.join("\n<p>※</p>\n"));
+    writeFileSync(
+      originalPath,
+      allLines.join(`\n<p>${appConfig.epub_seprarator[0]}</p>\n`),
+    );
 
     for (const part of validParts) {
       unlinkSync(part);
