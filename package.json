@@ -11,13 +11,13 @@
     "format": "bun run prettier --write ."
   },
   "devDependencies": {
-    "@types/bun": "^1.3.14",
-    "@types/jsdom": "^28.0.3"
+    "@types/bun": "^1.4.0",
+    "@types/jsdom": "^30.0.0"
   },
   "peerDependencies": {
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "jsdom": "^29.1.1"
+    "jsdom": "^30.0.1"
   }
 }
