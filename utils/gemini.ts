@@ -1,10 +1,12 @@
-import { execSync } from "child_process";
-import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "fs";
+import { existsSync, rmSync, statSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
+import { HighDemandError, ProhibitedContentError } from "./errors";
 import { Logger } from "./logger";
+import { opencodeRequest } from "./opencode";
+import type { AIRequest } from "./types";
 import { ensureTempDir } from "./temp";
 
-const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model.api}:generateContent`;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model.gemini}:generateContent`;
 
 function getApiKey() {
   if (appConfig.apiKeys.length === 0) {
@@ -38,11 +40,7 @@ export async function geminiRequest({
   instruction,
   prompt,
   body: additionalBody,
-}: {
-  instruction: string;
-  prompt: string;
-  body?: object;
-}) {
+}: AIRequest) {
   ensureTempDir();
   const body = {
     systemInstruction: {
@@ -90,8 +88,8 @@ export async function geminiRequest({
     const start = Date.now();
     const apiKey = getApiKey();
     if (!apiKey) {
-      Logger.info("No available API keys. Falling back to Gemini CLI...");
-      return geminiCliRequest({
+      Logger.info("No available API keys. Falling back to OpenCode...");
+      return opencodeRequest({
         instruction,
         prompt,
         body: additionalBody,
@@ -123,7 +121,7 @@ export async function geminiRequest({
       if (response.status == 503) {
         if (retryCount > 5) {
           if (appConfig.skipHighDemand) throw new HighDemandError();
-          return geminiCliRequest({
+          return opencodeRequest({
             instruction,
             prompt,
             body: additionalBody,
@@ -154,7 +152,7 @@ export async function geminiRequest({
       if (appConfig.skipProhibitedContent) {
         throw new ProhibitedContentError();
       }
-      return geminiCliRequest({ instruction, prompt, body: additionalBody });
+      return opencodeRequest({ instruction, prompt, body: additionalBody });
     }
 
     if (!data.candidates || data.candidates.length === 0) {
@@ -185,92 +183,5 @@ export async function geminiRequest({
     responseText = responseText.replaceAll("`", "");
 
     return responseText;
-  }
-}
-
-export async function geminiCliRequest({
-  instruction,
-  prompt,
-  body: additionalBody,
-  runner = "api-fallback-handler",
-}: Parameters<typeof geminiRequest>[0] & { runner?: string }) {
-  ensureTempDir();
-  writeFileSync(
-    ".temp/INSTRUCTION.md",
-    [
-      "You are operating in api-fallback-handler mode.",
-      "CRITICAL: Do NOT output the result as text in the chat. You MUST use the Write tool to save your complete output directly to the file .temp/output.txt (always overwrite). Do NOT use echo, cat, or any other method — use the Write tool only.",
-      "",
-      ...instruction.split("\n").map((line) => line.trim()),
-    ].join("\n"),
-  );
-  writeFileSync(
-    ".temp/PROMPT.md",
-    [
-      "You are operating in api-fallback-handler mode.",
-      "CRITICAL: Do NOT output the result as text in the chat. You MUST use the Write tool to save your complete output directly to the file .temp/output.txt (always overwrite). Do NOT use echo, cat, or any other method — use the Write tool only.",
-      "",
-      ...prompt.split("\n").map((line) => line.trim()),
-      "",
-      additionalBody
-        ? `<reponse_format>\n${JSON.stringify(additionalBody, null, 2)}\n</reponse_format>`
-        : "Output must be in HTML format with SAME number of lines as <original_text>",
-    ].join("\n"),
-  );
-  writeFileSync(".temp/output.txt", "(empty)");
-  let retryCount = 0;
-  while (true) {
-    try {
-      const prompt =
-        runner === "gemini"
-          ? `agy --prompt "Follow instruction in .temp/PROMPT.md . Use the Write tool to save your output in .temp/output.txt"`
-          : `opencode run "Act as api-fallback-handler agent. Read .temp/PROMPT.md and follow its instructions. You MUST use the Write tool to save your complete output to .temp/output.txt. Do NOT output text in chat." --model google/${appConfig.model.agent} --variant med --agent api-fallback-handler`;
-      execSync(prompt, {
-        stdio: "inherit",
-        timeout: 1000 * 60 * 10,
-        killSignal: "SIGKILL",
-      });
-      if (additionalBody) {
-        const output = readFileSync(".temp/output.txt", "utf-8");
-        if (!output) {
-          writeFileSync(".temp/output.txt", JSON.stringify({}, null, 2));
-        }
-      }
-    } catch {}
-    const output = readFileSync(".temp/output.txt", "utf-8");
-    if (output === "(empty)") {
-      Logger.error(
-        `Gemini CLI returned empty output. Retrying Gemini CLI request...`,
-      );
-      retryCount++;
-      if (retryCount > 3) {
-        Logger.error(
-          `Gemini CLI returned empty output after 5 retries. Exiting.`,
-        );
-        rmSync(".temp/INSTRUCTION.md");
-        rmSync(".temp/PROMPT.md");
-        rmSync(".temp/output.txt");
-        throw new HighDemandError();
-      }
-      continue;
-    }
-    rmSync(".temp/INSTRUCTION.md");
-    rmSync(".temp/PROMPT.md");
-    rmSync(".temp/output.txt");
-    return output;
-  }
-}
-
-export class ProhibitedContentError extends Error {
-  constructor() {
-    super("Prohibited content detected and skipped.");
-    this.name = "ProhibitedContentError";
-  }
-}
-
-export class HighDemandError extends Error {
-  constructor() {
-    super("High demand detected and skipped.");
-    this.name = "HighDemandError";
   }
 }

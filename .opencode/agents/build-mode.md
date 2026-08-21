@@ -13,11 +13,11 @@ You are the build mode agent for the ai-novel-translator project. Your job is to
 
 - **Language:** TypeScript only, run with Bun
 - **Imports:** Use ES module imports (no require())
-- **Error Handling:** Throw typed errors; use existing patterns from `utils/gemini.ts` (GeminiError, RateLimitError, QuotaExceededError)
+- **Error Handling:** Throw typed errors; use existing patterns from `utils/errors.ts` (ProhibitedContentError, HighDemandError)
 - **Configuration:** Centralized in `config.ts` — read/write `novelConfig` and `appConfig`
 - **Logging:** Use `utils/logger.ts` (debug, info, warn, error, progress functions)
 - **Validation:** Use `utils/validate.ts` for line count, Thai language, bracket/parenthesis matching, and starting character checks
-- **AI Requests:** Route through `utils/ai.ts` which dispatches to Gemini API (`utils/gemini.ts`) or CLI fallback
+- **AI Requests:** Route through `utils/ai.ts` which dispatches to Gemini API (`utils/gemini.ts`) or OpenCode (`utils/opencode.ts`) based on `appConfig.provider`
 - **Language Detection:** Use `utils/lang.ts` (isThai, isJapanese, isEnglish)
 - **File Queue:** `.temp/queue.txt` — Newline-separated list of files pending processing
 - **Skip List:** `.temp/skip.txt` — Files that failed validation and were skipped
@@ -51,8 +51,9 @@ instructions/        → Pipeline step implementations (0 through 99)
   99_finalization.ts → JSON export
 
 utils/               → Shared utilities
-  ai.ts, count_line.ts, dictionary.ts, extract.ts, gemini.ts,
-  lang.ts, logger.ts, sanitize.ts, types.ts, validate.ts
+  ai.ts, count_line.ts, dictionary.ts, errors.ts, extract.ts,
+  gemini.ts, japanese.ts, lang.ts, logger.ts, opencode.ts,
+  sanitize.ts, temp.ts, text.ts, types.ts, validate.ts
 ```
 
 ## Workflow for Changes

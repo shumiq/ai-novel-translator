@@ -10,9 +10,12 @@ import {
   writeFileSync,
 } from "fs";
 import { novelConfig } from "../config";
-import { aiRequest } from "../utils/ai";
+import {
+  aiRequest,
+  HighDemandError,
+  ProhibitedContentError,
+} from "../utils/ai";
 import { extractExistedWords } from "../utils/dictionary";
-import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { isJapanese } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";

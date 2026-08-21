@@ -160,17 +160,18 @@ Ephemeral working directory. All intermediate state lives here:
 
 ### API and AI calls
 
-- All AI requests go through `utils/ai.ts` → `utils/gemini.ts`.
+- All AI requests go through `utils/ai.ts`, which dispatches to `utils/gemini.ts` (Gemini API) or `utils/opencode.ts` (OpenCode CLI) based on `appConfig.provider`.
+- Error classes (`ProhibitedContentError`, `HighDemandError`) are defined in `utils/errors.ts`.
 - API keys come from `.env` via `GEMINI_API_KEY` (comma-separated for rotation).
 - On 429: current key is marked used (sentinel file in `.temp/`), retries with next key.
-- On 503: retries up to 5 times with 5s delay, then falls back to CLI mode.
-- On PROHIBITED_CONTENT: either throws `ProhibitedContentError` (skips file) or falls back to CLI.
-- CLI fallback invokes `opencode run` with the `api-fallback-handler` agent.
+- On 503: retries up to 5 times with 5s delay, then falls back to OpenCode.
+- On PROHIBITED_CONTENT: either throws `ProhibitedContentError` (skips file) or falls back to OpenCode.
+- OpenCode fallback invokes `opencode run` with the `api-fallback-handler` agent.
 
 ### Key conventions
 
 - **Imports:** Use relative paths (`../utils/gemini`). The `@utils/*` path alias exists in tsconfig but codebase uses relative imports.
-- **Error handling:** Typed errors from `utils/gemini.ts` (`ProhibitedContentError`, `HighDemandError`). Pipeline catches and skips on errors.
+- **Error handling:** Typed errors from `utils/errors.ts` (`ProhibitedContentError`, `HighDemandError`). Pipeline catches and skips on errors.
 - **Logging:** Use `utils/logger.ts` — `Logger.info()`, `Logger.warn()`, `Logger.error()`, `Logger.debug()` (debug gated by `appConfig.debug`).
 - **Validation:** `utils/validate.ts` checks line count, Thai detection, bracket/parenthesis matching, and starting character type. Controlled by `appConfig.validation` flags.
 - **Sanitization:** `utils/sanitize.ts` strips HTML to `<p>` lines, normalizes Japanese punctuation (quotes → `"`, brackets → `[...]`, fullwidth digits → ASCII, Thai digits → ASCII, etc.).
@@ -179,7 +180,7 @@ Ephemeral working directory. All intermediate state lives here:
 ### Configuration (`config.ts`)
 
 - `novelConfig` — Novel metadata: paths, language, title, additional context for extraction.
-- `appConfig` — Runtime settings: mode (`api`/`agent`), models, pipeline steps, validation flags, chunk sizes, debug toggle.
+- `appConfig` — Runtime settings: provider (`gemini`/`opencode`), models, pipeline steps, validation flags, chunk sizes, debug toggle.
 
 ### Important gotchas
 

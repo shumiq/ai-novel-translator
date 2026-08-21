@@ -7,11 +7,14 @@ import {
   writeFileSync,
 } from "fs";
 import { appConfig, novelConfig } from "../config";
-import { aiRequest } from "../utils/ai";
+import {
+  aiRequest,
+  HighDemandError,
+  ProhibitedContentError,
+} from "../utils/ai";
 import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
 import { getPreviousChapterContent } from "../utils/extract";
-import { HighDemandError, ProhibitedContentError } from "../utils/gemini";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 import { validate } from "../utils/validate";

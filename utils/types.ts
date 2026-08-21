@@ -1,3 +1,9 @@
+export type AIRequest = {
+  instruction: string;
+  prompt: string;
+  body?: object;
+};
+
 export type Dictonary = {
   [key: string]:
     | {

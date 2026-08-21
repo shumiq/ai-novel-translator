@@ -69,6 +69,6 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 
 - Never modify files in `books/` or `json/` directly unless necessary for error recovery
 - Monitor the `.temp/` directory for marker files indicating pass completion
-- If the AI API fails, the runner will automatically use the CLI fallback (api-fallback-handler)
+- If the AI API fails, the runner will automatically fall back to OpenCode (api-fallback-handler agent)
 - The `validate()` utility ensures output integrity after each pass
 - You can run `bun run tsc --noEmit` to type-check before running the pipeline
