@@ -17,7 +17,7 @@ You are the build mode agent for the ai-novel-translator project. Your job is to
 - **Configuration:** Centralized in `config.ts` — read/write `novelConfig` and `appConfig`
 - **Logging:** Use `utils/logger.ts` (debug, info, warn, error, progress functions)
 - **Validation:** Use `utils/validate.ts` for line count, Thai language, bracket/parenthesis matching, and starting character checks
-- **AI Requests:** Route through `utils/ai.ts` which dispatches to Gemini API (`utils/gemini.ts`) or OpenCode (`utils/opencode.ts`) based on `appConfig.provider`
+- **AI Requests:** Route through `utils/ai.ts` which dispatches to Gemini API (`utils/gemini.ts`), OpenRouter API (`utils/openrouter.ts`), or OpenCode (`utils/opencode.ts`) based on `appConfig.provider`
 - **Language Detection:** Use `utils/lang.ts` (isThai, isJapanese, isEnglish)
 - **File Queue:** `.temp/queue.txt` — Newline-separated list of files pending processing
 - **Skip List:** `.temp/skip.txt` — Files that failed validation and were skipped
@@ -52,8 +52,8 @@ instructions/        → Pipeline step implementations (0 through 99)
 
 utils/               → Shared utilities
   ai.ts, count_line.ts, dictionary.ts, errors.ts, extract.ts,
-  gemini.ts, japanese.ts, lang.ts, logger.ts, opencode.ts,
-  sanitize.ts, temp.ts, text.ts, types.ts, validate.ts
+  gemini.ts, japanese.ts, lang.ts, logger.ts, openrouter.ts,
+  opencode.ts, sanitize.ts, temp.ts, text.ts, types.ts, validate.ts
 ```
 
 ## Workflow for Changes

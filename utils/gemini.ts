@@ -9,15 +9,15 @@ import { ensureTempDir } from "./temp";
 const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model.gemini}:generateContent`;
 
 function getApiKey() {
-  if (appConfig.apiKeys.length === 0) {
+  if (appConfig.geminiAPIKeys.length === 0) {
     Logger.error("No API keys provided in config.");
     process.exit(1);
   }
-  const nonExpiredKeys = appConfig.apiKeys.filter(
+  const nonExpiredKeys = appConfig.geminiAPIKeys.filter(
     (key) => !existsSync(`.temp/${key}`),
   );
   if (nonExpiredKeys.length === 0) {
-    appConfig.apiKeys.forEach((key) => {
+    appConfig.geminiAPIKeys.forEach((key) => {
       if (
         Date.now() - statSync(`.temp/${key}`).ctime.getTime() >
         1000 * 60 * 60

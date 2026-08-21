@@ -12,9 +12,13 @@ export const appConfig = {
   model: {
     gemini: "gemini-3.5-flash-lite",
     opencode: "google/gemini-3.1-flash-lite",
+    openrouter: "nvidia/nemotron-3-super-120b-a12b:free",
   },
-  apiKeys: process.env.GEMINI_API_KEY
+  geminiAPIKeys: process.env.GEMINI_API_KEY
     ? process.env.GEMINI_API_KEY.split(",")
+    : [],
+  openrouterAPIKeys: process.env.OPENROUTER_API_KEY
+    ? process.env.OPENROUTER_API_KEY.split(",")
     : [],
   pipeline: ["extraction", "translation", "consistency", "humanization"],
   skipProhibitedContent: false,

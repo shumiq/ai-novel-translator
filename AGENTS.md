@@ -160,11 +160,11 @@ Ephemeral working directory. All intermediate state lives here:
 
 ### API and AI calls
 
-- All AI requests go through `utils/ai.ts`, which dispatches to `utils/gemini.ts` (Gemini API) or `utils/opencode.ts` (OpenCode CLI) based on `appConfig.provider`.
+- All AI requests go through `utils/ai.ts`, which dispatches to `utils/gemini.ts` (Gemini API), `utils/openrouter.ts` (OpenRouter API), or `utils/opencode.ts` (OpenCode CLI) based on `appConfig.provider`.
 - Error classes (`ProhibitedContentError`, `HighDemandError`) are defined in `utils/errors.ts`.
-- API keys come from `.env` via `GEMINI_API_KEY` (comma-separated for rotation).
+- API keys come from `.env` via `GEMINI_API_KEY` (comma-separated for rotation) and `OPENROUTER_API_KEY` (comma-separated for rotation).
 - On 429: current key is marked used (sentinel file in `.temp/`), retries with next key.
-- On 503: retries up to 5 times with 5s delay, then falls back to OpenCode.
+- On 503: retries up to 5 times with backoff (honoring `Retry-After` header for OpenRouter), then falls back to OpenCode.
 - On PROHIBITED_CONTENT: either throws `ProhibitedContentError` (skips file) or falls back to OpenCode.
 - OpenCode fallback invokes `opencode run` with the `api-fallback-handler` agent.
 
@@ -180,7 +180,7 @@ Ephemeral working directory. All intermediate state lives here:
 ### Configuration (`config.ts`)
 
 - `novelConfig` — Novel metadata: paths, language, title, additional context for extraction.
-- `appConfig` — Runtime settings: provider (`gemini`/`opencode`), models, pipeline steps, validation flags, chunk sizes, debug toggle.
+- `appConfig` — Runtime settings: provider (`gemini`/`openrouter`/`opencode`), models, pipeline steps, validation flags, chunk sizes, debug toggle.
 
 ### Important gotchas
 
