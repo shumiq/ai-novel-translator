@@ -1,16 +1,23 @@
+import {
+  ApiError,
+  GoogleGenAI,
+  HarmBlockThreshold,
+  HarmCategory,
+  type GenerateContentConfig,
+  type GenerateContentResponse,
+  type ThinkingLevel,
+} from "@google/genai";
 import { existsSync, rmSync, statSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
 import { HighDemandError, ProhibitedContentError } from "./errors";
 import { Logger } from "./logger";
 import { opencodeRequest } from "./opencode";
-import type { AIRequest } from "./types";
 import { ensureTempDir } from "./temp";
-
-const url = `https://generativelanguage.googleapis.com/v1beta/models/${appConfig.model.gemini}:generateContent`;
+import type { AIRequest } from "./types";
 
 function getApiKey() {
   if (appConfig.geminiAPIKeys.length === 0) {
-    Logger.error("No API keys provided in config.");
+    Logger.error("No Gemini API keys provided in config.");
     process.exit(1);
   }
   const nonExpiredKeys = appConfig.geminiAPIKeys.filter(
@@ -42,43 +49,35 @@ export async function geminiRequest({
   body: additionalBody,
 }: AIRequest) {
   ensureTempDir();
-  const body = {
-    systemInstruction: {
-      parts: [
-        {
-          text: instruction,
-        },
-      ],
-    },
-    contents: [
-      {
-        parts: [
-          {
-            text: prompt,
-          },
-        ],
-      },
-    ],
+  const config: GenerateContentConfig = {
+    systemInstruction: instruction,
     safetySettings: [
-      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
       {
-        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-        threshold: "BLOCK_NONE",
+        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
       },
       {
-        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-        threshold: "BLOCK_NONE",
+        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
       },
     ],
-    ...additionalBody,
-    generationConfig: {
-      thinkingConfig: {
-        thinkingLevel: appConfig.thinking,
-      },
-      temperature: 1.0,
-      ...(additionalBody as any)?.generationConfig,
+    temperature: 1.0,
+    thinkingConfig: {
+      thinkingLevel: appConfig.thinking as ThinkingLevel,
     },
+    // Merge REST-style generationConfig overrides (e.g. responseMimeType, responseSchema)
+    ...(additionalBody as { generationConfig?: object })?.generationConfig,
+    // The SDK retries on 5xx/429 by default — disable that so the retry
+    // logic below (key rotation + OpenCode fallback) stays in control.
+    httpOptions: { retryOptions: { attempts: 1 } },
   };
 
   // Loop to retry on 503 errors, which indicate the model is still loading
@@ -95,30 +94,32 @@ export async function geminiRequest({
         body: additionalBody,
       });
     }
-    const response = await fetch(`${url}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(1000 * 60 * 60),
-      // @ts-ignore - Bun-specific extension
-      timeout: false,
-      keepalive: true,
-      verbose: appConfig.debug,
-    }).catch((e) => {
-      Logger.error(
-        `Request to Gemini API failed after ${Math.round((Date.now() - start) / 1000)} seconds`,
-      );
-      Logger.error(e);
-      process.exit(1);
-    });
+    const ai = new GoogleGenAI({ apiKey });
 
-    Logger.debug(
-      `Response received from Gemini API with status ${response.status} after ${Math.round((Date.now() - start) / 1000)} seconds`,
-    );
-    if (!response.ok) {
-      const errorText = await response.text();
-      Logger.error(`API Error: ${response.status} - ${errorText}`);
-      if (response.status == 503) {
+    let response: GenerateContentResponse;
+    try {
+      response = await ai.models.generateContent({
+        model: appConfig.model.gemini,
+        contents: prompt,
+        // Fresh 1-hour timeout per attempt
+        config: { ...config, abortSignal: AbortSignal.timeout(1000 * 60 * 60) },
+      });
+    } catch (e) {
+      if (!(e instanceof ApiError)) {
+        // Network-level failure or unexpected client error
+        Logger.error(
+          `Request to Gemini API failed after ${Math.round((Date.now() - start) / 1000)} seconds`,
+        );
+        Logger.error(e);
+        process.exit(1);
+      }
+
+      const status = e.status;
+      Logger.debug(
+        `Response received from Gemini API with status ${status} after ${Math.round((Date.now() - start) / 1000)} seconds`,
+      );
+      Logger.error(`API Error: ${status} - ${e.message}`);
+      if (status === 503) {
         if (retryCount > 5) {
           if (appConfig.skipHighDemand) throw new HighDemandError();
           return opencodeRequest({
@@ -132,7 +133,7 @@ export async function geminiRequest({
         await new Promise((res) => setTimeout(res, 5000));
         continue;
       }
-      if (response.status == 429) {
+      if (status === 429) {
         Logger.error(
           "API key rate limit reached. Marking current key as used and retrying with next key...",
         );
@@ -143,35 +144,37 @@ export async function geminiRequest({
       process.exit(1);
     }
 
-    const data = await response.json().catch((e) => {
-      Logger.error(e);
-      process.exit(1);
-    });
+    Logger.debug(
+      `Response received from Gemini API with status ${response.sdkHttpResponse?.responseInternal?.status} after ${Math.round((Date.now() - start) / 1000)} seconds`,
+    );
 
-    if (JSON.stringify(data).includes("PROHIBITED_CONTENT")) {
+    if (JSON.stringify(response).includes("PROHIBITED_CONTENT")) {
       if (appConfig.skipProhibitedContent) {
         throw new ProhibitedContentError();
       }
       return opencodeRequest({ instruction, prompt, body: additionalBody });
     }
 
-    if (!data.candidates || data.candidates.length === 0) {
+    const candidate = response.candidates?.at(0);
+    if (!candidate) {
       Logger.error(`No candidates returned`);
-      Logger.error(`Response text: ${JSON.stringify(data)}`);
+      Logger.error(`Response text: ${JSON.stringify(response)}`);
       continue;
     }
-    if (!data.candidates[0].content || !data.candidates[0].content.parts) {
+    const parts = candidate.content?.parts;
+    if (!parts) {
       Logger.error(`No content returned`);
-      Logger.error(`Response text: ${JSON.stringify(data)}`);
+      Logger.error(`Response text: ${JSON.stringify(response)}`);
       continue;
     }
-    if (!data.candidates[0].content.parts[0].text) {
+    const firstPart = parts.at(0);
+    if (!firstPart?.text) {
       Logger.error(`No text returned`);
-      Logger.error(`Response text: ${JSON.stringify(data)}`);
+      Logger.error(`Response text: ${JSON.stringify(response)}`);
       continue;
     }
 
-    let responseText = data.candidates[0].content.parts[0].text as string;
+    let responseText = firstPart.text;
     // Regex breakdown:
     // [\{\[\<] : Find the first {, [, or <
     // .* : Match everything in between (greedily)
