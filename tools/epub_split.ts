@@ -1,11 +1,13 @@
 // Name: EPUB Split
 // Description: Split large EPUB files into smaller parts at separator boundaries
-import { readFileSync, writeFileSync, unlinkSync } from "fs";
+import { readFileSync, unlinkSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
-import { extractNonThai } from "../utils/extract";
+import { extractNonThai, extractThai } from "../utils/extract";
 
 export function epubSplit() {
-  const files = extractNonThai();
+  const files = appConfig.pipeline.includes("translation")
+    ? extractNonThai()
+    : extractThai();
   const separatorPatterns = appConfig.epub_seprarator;
   let splitCount = 0;
 

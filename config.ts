@@ -27,7 +27,7 @@ export const appConfig = {
   previousChunk: 30,
   chunkSize: 100,
   thinking: "high",
-  epub_seprarator: ["※"],
+  epub_seprarator: ["***", "※"],
   validation: {
     retriesLimit: 0,
     lineCount: true,
