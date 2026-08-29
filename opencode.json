@@ -3,6 +3,5 @@
   "autoupdate": true,
   "default_agent": "build-mode",
   "instructions": [".temp/INSTRUCTION.md", ".temp/PROMPT.md"],
-  "enabled_providers": ["google", "openrouter", "opencode"],
-  "plugin": ["opencode-antigravity-auth@latest"]
+  "enabled_providers": ["google", "openrouter", "opencode"]
 }
