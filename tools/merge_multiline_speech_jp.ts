@@ -130,7 +130,7 @@ ${taskLines.join("\n")}
   );
 
   execSync(
-    `opencode run "Fix unmatched Japanese quote characters" --model ${appConfig.model.opencode} --agent japanese-quote-fixer -- --variant med`,
+    `opencode run "Fix unmatched Japanese quote characters" --auto --model ${appConfig.model.opencode} --agent japanese-quote-fixer -- --variant ${appConfig.thinking}`,
     {
       stdio: "inherit",
       timeout: 1000 * 60 * 10,

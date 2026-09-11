@@ -33,8 +33,7 @@ tools/               → Tool scripts (run with `bun tools/<name>.ts`)
   runner_api.ts           → Core engine: 4-pass pipeline orchestration
   finalize.ts             → Convert Thai HTML back to JSON
   merge_multiline_speech_jp.ts → Merge multi-line Japanese speech in HTML files
-  translate_leftover_english.ts → Translate leftover English to Thai via agent
-  translate_leftover_japanese.ts → Translate leftover Japanese to Thai via agent
+  translate_leftover.ts   → Translate leftover English/Japanese to Thai (auto-detect)
   sanitize_all.ts         → Sanitize all translated HTML files
   sanitize_epub.ts        → Sanitize EPUB-generated HTML files
   check_quota.ts          → Check Gemini API quota across accounts
@@ -53,7 +52,8 @@ instructions/        → Pipeline step implementations (0 through 99)
 utils/               → Shared utilities
   ai.ts, count_line.ts, dictionary.ts, errors.ts, extract.ts,
   gemini.ts, japanese.ts, lang.ts, logger.ts, openrouter.ts,
-  opencode.ts, sanitize.ts, temp.ts, text.ts, types.ts, validate.ts
+  opencode.ts, sanitize.ts, temp.ts, text.ts, translate_leftover.ts,
+  types.ts, validate.ts
 ```
 
 ## Workflow for Changes

@@ -139,20 +139,16 @@ export const runnerAPI = async () => {
     }
   }
 
+  Logger.step("🧹", "Leftover cleanup");
+
+  Logger.info("  └─ translate_leftover");
+  execSync(`bun tools/translate_leftover.ts`);
+
   if (
     readFileSync(".temp/queue.txt", "utf-8").trim() ||
     readFileSync(".temp/skip.txt", "utf-8").trim()
   ) {
     process.exit(1);
-  }
-  Logger.step("🧹", "Leftover cleanup");
-
-  if (novelConfig.originalLanguage === "Japanese") {
-    Logger.info("  └─ translate_leftover_japanese");
-    execSync(`bun tools/translate_leftover_japanese.ts`);
-  } else {
-    Logger.info("  └─ translate_leftover_english");
-    execSync(`bun tools/translate_leftover_english.ts`);
   }
 
   Logger.done("Pipeline complete");

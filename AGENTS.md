@@ -91,12 +91,12 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 
 - After the 4-pass pipeline finishes, some English or Japanese lines remain untranslated
 - Need to scan translated HTML files for non-Thai text and translate it to Thai
-- A dedicated cleanup pass for `translate_leftover_english.ts` or `translate_leftover_japanese.ts`
+- A dedicated cleanup pass via `translate_leftover.ts`
 
 **Workflow:**
 
-1. Run `bun tools/translate_leftover_english.ts` or `bun tools/translate_leftover_japanese.ts` to detect and translate leftover non-Thai lines
-2. Each script scans translated HTML files, identifies non-Thai lines, writes a task list to `.temp/INSTRUCTION.md`, and dispatches the work via `opencode run --agent leftover-translator`
+1. Run `bun tools/translate_leftover.ts` to detect and translate leftover non-Thai lines (auto-detects language from `novelConfig.originalLanguage`)
+2. The script scans translated HTML files, identifies non-Thai lines, writes a task list to `.temp/INSTRUCTION.md`, and dispatches the work via `opencode run --agent leftover-translator`
 3. The agent reads the instruction file, edits the specified files/line numbers directly, and preserves all HTML structure
 
 ---

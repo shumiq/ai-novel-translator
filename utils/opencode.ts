@@ -38,7 +38,7 @@ export async function opencodeRequest({
   let retryCount = 0;
   while (true) {
     try {
-      const prompt = `opencode run "Act as api-fallback-handler agent. Read .temp/PROMPT.md and follow its instructions. You MUST use the Write tool to save your complete output to .temp/output.txt. Do NOT output text in chat." --model ${appConfig.model.opencode} --variant med --agent api-fallback-handler`;
+      const prompt = `opencode run "Act as api-fallback-handler agent. Read .temp/PROMPT.md and follow its instructions. You MUST use the Write tool to save your complete output to .temp/output.txt. Do NOT output text in chat." --auto --model ${appConfig.model.opencode} --variant ${appConfig.thinking} --agent api-fallback-handler`;
       execSync(prompt, {
         stdio: "inherit",
         timeout: 1000 * 60 * 10,
