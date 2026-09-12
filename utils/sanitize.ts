@@ -63,6 +63,7 @@ export const sanitize = (
                   .replaceAll("［", " [")
                   .replaceAll("］", "] ")
                   .replaceAll("（", " (")
+                  .replaceAll("）", ") ")
                   .replaceAll("＞", "&gt;")
                   .replaceAll("＜", "&lt;")
                   .replaceAll(", ", " ")
