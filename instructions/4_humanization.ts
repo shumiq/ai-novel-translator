@@ -47,7 +47,6 @@ export async function humanization(file: string) {
   );
   const consistencyCheckedHTML = readFileSync(getSourceFile(file), "utf-8");
 
-  let chunk = 0;
   let chunkOffset = 0;
   let result = [] as string[];
   let validationError: string | null = null;
@@ -55,9 +54,9 @@ export async function humanization(file: string) {
   while (true) {
     const originalLines = originalHtml.split("\n");
     const translatedLines = consistencyCheckedHTML.split("\n");
-    const chunkStart = chunk * appConfig.chunkSize + chunkOffset;
+    const chunkStart = chunkOffset;
     const chunkEnd = Math.min(
-      (chunk + 1) * appConfig.chunkSize,
+      chunkStart + appConfig.chunkSize,
       originalLines.length,
     );
     const originalChunk = originalLines.slice(chunkStart, chunkEnd).join("\n");
@@ -68,16 +67,17 @@ export async function humanization(file: string) {
       Logger.info(
         `No more content to humanize. Ending process for ${file}. Restarting from the beginning of the file to check for any missed content.`,
       );
-      chunk = 0;
       chunkOffset = 0;
       validationError = null;
       validationRetries = 0;
       result = [];
       continue;
     }
-    Logger.debug(`  Chunk ${chunk + 1} (lines ${chunkStart + 1}-${chunkEnd})`);
+    Logger.debug(
+      `  Chunk ${Math.floor(chunkStart / appConfig.chunkSize) + 1} (lines ${chunkStart + 1}-${chunkEnd})`,
+    );
     const previousChunk =
-      chunk > 0
+      chunkStart > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
         : previousContent;
     const request = {
@@ -149,7 +149,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     const humanizationError = validate(
       translatedChunk,
       humanizedHtml,
-      `file ${file} chunk ${chunk + 1}`,
+      `file ${file} chunk ${Math.floor(chunkStart / appConfig.chunkSize) + 1}`,
     );
     if (humanizationError) {
       validationRetries++;
@@ -175,7 +175,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
         const responseLines = humanizedHtml.split("\n");
         const keptLines = responseLines.slice(0, keepUntil);
         result.push(keptLines.join("\n"));
-        chunkOffset = keepUntil;
+        chunkOffset = chunkStart + keepUntil;
       }
       validationError = humanizationError;
       continue;
@@ -184,8 +184,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       validationRetries = 0;
     }
     result.push(...humanizedHtml.split("\n"));
-    chunk++;
-    chunkOffset = 0;
+    chunkOffset = chunkEnd;
     Logger.debug(
       `  └─ chunk done (${result.length}/${originalLines.length} lines)`,
     );

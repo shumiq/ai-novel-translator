@@ -32,7 +32,7 @@ export const appConfig = {
     retriesLimit: 0,
     lineCount: true,
     isThai: true,
-    quouteCount: false,
+    quoteCount: false,
     parenthesesCount: true,
     startCharacter: true,
     badCharacter: false,

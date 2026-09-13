@@ -1,6 +1,6 @@
 import { appConfig } from "../config";
 import { countLines } from "./count_line";
-import { isThai } from "./lang";
+import { isEnglish, isJapanese, isThai } from "./lang";
 import { Logger } from "./logger";
 import { extractLinesFromHtml } from "./text";
 
@@ -31,7 +31,11 @@ export function validate(
     return msg;
   }
 
-  if (!isThai(after) && appConfig.validation.isThai) {
+  if (
+    !isThai(after) &&
+    (isJapanese(after) || isEnglish(after)) &&
+    appConfig.validation.isThai
+  ) {
     const msg = `Output does not appear to be in Thai${label}`;
     Logger.error(msg);
     Logger.error(
@@ -80,9 +84,9 @@ export function validate(
     if (
       countQuotesAndBrackets(beforeLine) !==
         countQuotesAndBrackets(afterLine) &&
-      appConfig.validation.quouteCount
+      appConfig.validation.quoteCount
     ) {
-      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${countQuotesAndBrackets(beforeLine)}, translated has ${countQuotesAndBrackets(afterLine)}`;
+      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${countQuotesAndBrackets(beforeLine)}, translated has ${countQuotesAndBrackets(afterLine)}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
       Logger.error(msg);
       return msg;
     }
@@ -91,7 +95,7 @@ export function validate(
       countParens(afterLine) > countParens(beforeLine) &&
       appConfig.validation.parenthesesCount
     ) {
-      const msg = `Parenthesis count mismatch at line ${i + 1}${label}: original has ${countParens(beforeLine)}, translated has ${countParens(afterLine)}`;
+      const msg = `Parenthesis count mismatch at line ${i + 1}${label}: original has ${countParens(beforeLine)}, translated has ${countParens(afterLine)}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
       Logger.error(msg);
       return msg;
     }

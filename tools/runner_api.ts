@@ -20,6 +20,7 @@ import {
   getNextFromQueue,
   removeFirstFromQueue,
 } from "../utils/temp";
+import { sanitizeFile } from "@utils/sanitize";
 
 const getFinalFile = (file: string) => {
   const files = [
@@ -51,6 +52,9 @@ export const runnerAPI = async () => {
       if (appConfig.loopSkip) writeFileSync(".temp/skip.txt", "");
       process.exit(1);
     }
+
+    Logger.info(`Sanitizing ${file} before processing...`);
+    sanitizeFile(file);
 
     try {
       while (true) {

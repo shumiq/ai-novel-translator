@@ -109,8 +109,9 @@ export const sanitize = (
                   .trim()
           }</p>`,
       )
-      .join("\n")
-      .replaceAll(/<p>[0-9]{1,3}: /g, "<p>");
+      .filter((line) => line !== "<p></p>")
+      .join("\n");
+    // .replaceAll(/<p>[0-9]{1,3}: /g, "<p>");
   } catch (e) {
     Logger.error("Error sanitizing content:", e);
     Logger.error(

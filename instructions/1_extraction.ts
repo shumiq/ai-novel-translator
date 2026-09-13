@@ -229,6 +229,14 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
       rest.translations = rest.translations.filter(
         (t: string) => !isJapanese(t),
       );
+
+      // Strip parenthesized annotations from translations if the original name has no parentheses
+      const nameHasParens = /[\(\)（）]/.test(name);
+      if (!nameHasParens) {
+        rest.translations = rest.translations.map((t: string) =>
+          t.replace(/\s*[\(（][^)）]*[)）]/g, "").trim(),
+        );
+      }
     }
 
     if (!rest.translations || rest.translations.length === 0) {

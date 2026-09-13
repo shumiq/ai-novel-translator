@@ -27,16 +27,15 @@ export async function translation(file: string) {
   const existedWords = extractExistedWords(rawHTML);
   const previousContent = getPreviousChapterContent(file);
 
-  let chunk = 0;
   let chunkOffset = 0;
   let result = [] as string[];
   let validationError: string | null = null;
   let validationRetries = 0;
   while (true) {
     const rawLines = sanitize(rawHTML).split("\n");
-    const chunkStart = chunk * appConfig.chunkSize + chunkOffset;
+    const chunkStart = chunkOffset;
     const chunkEnd = Math.min(
-      (chunk + 1) * appConfig.chunkSize,
+      chunkStart + appConfig.chunkSize,
       rawLines.length,
     );
     const processedChunk = rawLines.slice(chunkStart, chunkEnd).join("\n");
@@ -44,16 +43,17 @@ export async function translation(file: string) {
       Logger.info(
         `No more content to translate. Ending process for ${file}. Restarting from the beginning of the file to check for any missed content.`,
       );
-      chunk = 0;
       chunkOffset = 0;
       validationError = null;
       validationRetries = 0;
       result = [];
       continue;
     }
-    Logger.debug(`  Chunk ${chunk + 1} (lines ${chunkStart + 1}-${chunkEnd})`);
+    Logger.debug(
+      `  Chunk ${Math.floor(chunkStart / appConfig.chunkSize) + 1} (lines ${chunkStart + 1}-${chunkEnd})`,
+    );
     const previousChunk =
-      chunk > 0
+      chunkStart > 0
         ? result.slice(-appConfig.previousChunk).join("\n")
         : previousContent;
     const request = {
@@ -115,7 +115,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
     const translationError = validate(
       processedChunk,
       translatedHtml,
-      `file ${file} chunk ${chunk + 1}`,
+      `file ${file} chunk ${Math.floor(chunkStart / appConfig.chunkSize) + 1}`,
     );
     if (translationError) {
       validationRetries++;
@@ -141,7 +141,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
         const responseLines = translatedHtml.split("\n");
         const keptLines = responseLines.slice(0, keepUntil);
         result.push(keptLines.join("\n"));
-        chunkOffset = keepUntil;
+        chunkOffset = chunkStart + keepUntil;
       }
       validationError = translationError;
       continue;
@@ -150,8 +150,7 @@ ${validationError ? `<feedback>\n${validationError}\n</feedback>\n\n` : ""}Instr
       validationRetries = 0;
     }
     result.push(...translatedHtml.split("\n"));
-    chunk++;
-    chunkOffset = 0;
+    chunkOffset = chunkEnd;
     Logger.debug(`  └─ chunk done (${result.length}/${rawLines.length} lines)`);
     if (countLines(rawHTML) === countLines(result.join("\n"))) {
       writeFileSync(
