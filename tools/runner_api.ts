@@ -48,6 +48,10 @@ export const runnerAPI = async () => {
     Logger.step("", `[${count}] ${file}`);
 
     if (count >= LIMIT) {
+      Logger.step("🧹", "Leftover cleanup");
+      Logger.info("  └─ translate_leftover");
+      execSync(`bun tools/translate_leftover.ts`);
+
       Logger.warn(`Reached limit of ${LIMIT} files. Resetting skip list.`);
       if (appConfig.loopSkip) writeFileSync(".temp/skip.txt", "");
       process.exit(1);
@@ -144,7 +148,6 @@ export const runnerAPI = async () => {
   }
 
   Logger.step("🧹", "Leftover cleanup");
-
   Logger.info("  └─ translate_leftover");
   execSync(`bun tools/translate_leftover.ts`);
 
