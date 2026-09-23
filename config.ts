@@ -10,8 +10,8 @@ export const novelConfig = {
 export const appConfig = {
   provider: "gemini",
   model: {
-    gemini: "gemini-3.1-flash-lite",
-    opencode: "google/gemini-3.1-flash-lite",
+    gemini: "gemini-flash-lite-latest",
+    opencode: "google/gemini-flash-lite-latest",
     openrouter: "nvidia/nemotron-3-ultra-550b-a55b:free",
   },
   geminiAPIKeys: process.env.GEMINI_API_KEY
