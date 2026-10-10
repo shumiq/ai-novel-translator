@@ -106,6 +106,7 @@ export const sanitize = (
                   .replaceAll(/[–―—]/g, "—")
                   .replaceAll(/\s\s+/g, " ")
                   .replaceAll(/\.\.\.\.+/g, "...")
+                  .replaceAll(/ *\( *\) */g, "")
                   .trim()
           }</p>`,
       )
