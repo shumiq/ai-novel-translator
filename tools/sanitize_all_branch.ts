@@ -36,6 +36,9 @@ async function main(): Promise<void> {
     Logger.info(`Sanitizing files on branch ${branch}...`);
     await execShell("bun tools/sanitize_all.ts");
 
+    Logger.info(`Finalizing files on branch ${branch}...`);
+    await execShell("bun tools/finalize.ts");
+
     rmSync(".temp", { recursive: true, force: true });
 
     if (!(await hasChanges())) {
