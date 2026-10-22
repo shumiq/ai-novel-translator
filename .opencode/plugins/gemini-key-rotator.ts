@@ -1,13 +1,13 @@
 /**
- * gemini-key-rotator — opencode plugin
+ * gemini-key-rotator — opencode V2 plugin
  *
  * Reads GEMINI_API_KEY from the project's .env file (comma-separated list),
  * then overrides the built-in Google provider with round-robin key rotation.
  *
- * - config hook  : sets provider.google.options.apiKey to the first key so
- *                  opencode treats the provider as authenticated.
- * - chat.headers : injects x-goog-api-key with the next key in the pool on
- *                  every single LLM request, rotating through all keys evenly.
+ * - provider transform : sets the google provider's apiKey to the first key so
+ *                        opencode treats the provider as authenticated.
+ * - model.request hook : injects x-goog-api-key with the next key in the pool
+ *                        on every model request, rotating across all keys.
  *
  * No external npm packages needed — only Bun built-ins (fs, path).
  */
@@ -15,7 +15,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-import type { Plugin } from "@opencode-ai/plugin";
+import { Plugin } from "@opencode/plugin";
 
 function loadKeys(directory: string): string[] {
   // 1. prefer process.env if already populated (e.g. shell export)
@@ -50,51 +50,39 @@ function loadKeys(directory: string): string[] {
   return [];
 }
 
-const plugin: Plugin = async ({ directory }) => {
-  const keys = loadKeys(directory);
+export default Plugin.define({
+  id: "gemini-key-rotator",
+  async setup(ctx) {
+    const keys = loadKeys(ctx.location.directory);
 
-  if (keys.length === 0) {
-    console.warn(
-      "[gemini-key-rotator] No GEMINI_API_KEY found — plugin inactive.",
+    if (keys.length === 0) {
+      console.warn(
+        "[gemini-key-rotator] No GEMINI_API_KEY found — plugin inactive.",
+      );
+      return;
+    }
+
+    console.log(
+      `[gemini-key-rotator] Loaded ${keys.length} key(s). Round-robin rotation active.`,
     );
-    return {};
-  }
 
-  console.log(
-    `[gemini-key-rotator] Loaded ${keys.length} key(s). Round-robin rotation active.`,
-  );
+    // Tell opencode the google provider is authenticated by setting the first
+    // key on its settings. This makes the model list work.
+    await ctx.provider.transform((editor) => {
+      editor.update("google", (provider) => {
+        provider.settings = { ...provider.settings, apiKey: keys[0] };
+      });
+    });
 
-  // Shared counter — incremented on every chat request
-  let index = 0;
-
-  const next = (): string => {
-    const key = keys[index % keys.length];
-    index = (index + 1) % keys.length;
-    return key;
-  };
-
-  return {
-    // Tell opencode that the google provider is authenticated by setting the
-    // first key in the provider options. This makes the model list work and
-    // prevents the "not authenticated" banner.
-    config: async (cfg) => {
-      if (!cfg.provider) cfg.provider = {};
-      if (!cfg.provider.google) cfg.provider.google = {};
-      if (!cfg.provider.google.options) cfg.provider.google.options = {};
-      cfg.provider.google.options.apiKey = keys[0];
-    },
-
-    // Override the key on every request via the x-goog-api-key header,
-    // cycling through all keys in order.
-    "chat.headers": async (input, output) => {
-      // Safe check using optional chaining for provider ID
-      const providerId = input.provider?.id ?? input.provider;
-      if (providerId !== "google") return;
-
-      const key = next();
-      output.headers["x-goog-api-key"] = key;
-    },
-  };
-};
-
-export default plugin;
+    // Override the key on every model request, cycling through all keys.
+    let index = 0;
+    await ctx.session.hook(
+      "model.request",
+      (event) => {
+        event.headers["x-goog-api-key"] = keys[index];
+        index = (index + 1) % keys.length;
+      },
+      { providerID: "google" },
+    );
+  },
+});
