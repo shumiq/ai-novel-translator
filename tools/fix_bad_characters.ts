@@ -91,7 +91,7 @@ ${tableRows.join("\n")}
   );
 
   execSync(
-    `opencode run "Fix bad characters in Thai HTML files" --auto --model ${appConfig.model.opencode} --agent bad-character-fixer -- --variant ${appConfig.thinking}`,
+    `opencode run "Fix bad characters in Thai HTML files" --auto --model ${appConfig.model.opencode}#${appConfig.thinking} --agent bad-character-fixer`,
     {
       stdio: "inherit",
       timeout: 1000 * 60 * 10,

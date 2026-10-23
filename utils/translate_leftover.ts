@@ -57,7 +57,7 @@ ${qualityChecklist}`,
     );
 
     execSync(
-      `opencode run "${taskDescription}" --auto --model ${appConfig.model.opencode} --agent leftover-translator -- --variant ${appConfig.thinking}`,
+      `opencode run "${taskDescription}" --auto --model ${appConfig.model.opencode}#${appConfig.thinking} --agent leftover-translator`,
       {
         stdio: "inherit",
         timeout: 1000 * 60 * 10,
