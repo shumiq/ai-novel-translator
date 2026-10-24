@@ -4,6 +4,17 @@ import { readFileSync, unlinkSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
 import { extractNonThai, extractThai } from "../utils/extract";
 
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// A separator line holds only ONE kind of separator character (whitespace ignored):
+// "◇　◇　◇" splits, "◇　◇　◇ ***" is mixed and does not.
+export function isSeparatorLine(line: string, separators: string[]) {
+  const content = line.replace(/^<p>/, "").replace(/<\/p>$/, "");
+  return separators.some((s) =>
+    new RegExp(`^\\s*(?:${escapeRegex(s)}\\s*)+$`).test(content),
+  );
+}
+
 export function epubSplit() {
   const files = appConfig.pipeline.includes("translation")
     ? extractNonThai()
@@ -15,13 +26,12 @@ export function epubSplit() {
     const rawHTML = readFileSync(file, "utf-8").replace(/\r\n/g, "\n");
     const lines = rawHTML.split("\n");
 
-    const separatorRegex = new RegExp(
-      `^<p>(${separatorPatterns.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})</p>$`,
-    );
+    const isSeparator = (line: string) =>
+      isSeparatorLine(line, separatorPatterns);
 
     const splitPoints: number[] = [];
     for (let i = 0; i < lines.length; i++) {
-      if (separatorRegex.test(lines[i]!)) {
+      if (isSeparator(lines[i]!)) {
         splitPoints.push(i);
       }
     }
@@ -39,7 +49,7 @@ export function epubSplit() {
       const end = allSplitIndices[i + 1]!;
       const partLines = lines
         .slice(start, end)
-        .filter((line) => !separatorRegex.test(line));
+        .filter((line) => !isSeparator(line));
       if (partLines.some((l) => l.trim())) {
         parts.push(partLines);
       }
@@ -58,6 +68,12 @@ export function epubSplit() {
 }
 
 if (import.meta.main) {
+  const seps = appConfig.epub_seprarator;
+  console.assert(isSeparatorLine("<p>◇　◇　◇</p>", seps));
+  console.assert(isSeparatorLine("<p>* * *</p>", seps));
+  console.assert(!isSeparatorLine("<p>◇　◇　◇ ***</p>", seps));
+  console.assert(!isSeparatorLine("<p>text ◇ text</p>", seps));
+
   const count = epubSplit();
   console.log(`Split ${count} file(s)`);
 }

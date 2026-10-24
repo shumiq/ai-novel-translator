@@ -36,10 +36,7 @@ export function epubJoin() {
     }
 
     const originalPath = `${base}.${ext}`;
-    writeFileSync(
-      originalPath,
-      allLines.join(`\n<p>${appConfig.epub_seprarator[0]}</p>\n`),
-    );
+    writeFileSync(originalPath, allLines.join(`\n<p>※※※</p>\n`));
 
     for (const part of validParts) {
       unlinkSync(part);
