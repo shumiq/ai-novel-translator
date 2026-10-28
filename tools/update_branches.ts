@@ -52,32 +52,36 @@ async function hasNewChapters(branch: string): Promise<boolean> {
   );
 }
 
-async function needsUpdate(branch: string): Promise<boolean> {
-  if (await isBehindMain(branch)) return true;
-  if (!branch.startsWith("web/")) return false;
-  return hasNewChapters(branch);
+async function rebaseBranch(branch: string): Promise<void> {
+  cleanGitState();
+  Logger.info(`Rebase branch ${branch}...`);
+  await execShell(`git checkout ${branch} -f`);
+  cleanGitState();
+  try {
+    await execShell("git rebase main");
+  } catch (raw) {
+    await execShell("git rebase --abort").catch(() => {});
+    throw raw;
+  }
+  cleanGitState();
 }
 
 async function processBranch(branch: string): Promise<void> {
   cleanGitState();
 
-  if (!(await needsUpdate(branch))) {
+  if (!branch.startsWith("web/")) {
+    Logger.info(`Skip branch ${branch} (not a web branch).`);
+    return;
+  }
+
+  if (!(await hasNewChapters(branch))) {
     Logger.info(`Skip branch ${branch} (up-to-date, no new chapters).`);
     return;
   }
 
-  Logger.info(`Rebase branch ${branch}...`);
+  Logger.info(`Fetch new chapters for branch ${branch}...`);
   await execShell(`git checkout ${branch} -f`);
   cleanGitState();
-  await execShell("git rebase main");
-
-  if (!branch.startsWith("web/")) {
-    Logger.info(`  └─ not a web branch, skipping`);
-    cleanGitState();
-    return;
-  }
-
-  Logger.info(`Fetch new chapters for branch ${branch}...`);
   await execShell("bun tools/prepare.ts");
   rmSync(".temp", { recursive: true, force: true });
 
@@ -109,6 +113,25 @@ async function processBranch(branch: string): Promise<void> {
 async function main(): Promise<void> {
   const allBranches = BRANCH_PREFIXES.flatMap(getBranches);
   Logger.info(`Found ${allBranches.length} branches to check`);
+
+  await execShell("git checkout main -f");
+
+  Logger.info("Rebasing all branches...");
+  for (const branch of allBranches) {
+    try {
+      if (await isBehindMain(branch)) {
+        await rebaseBranch(branch);
+      } else {
+        Logger.info(`Skip rebase for ${branch} (up-to-date with main).`);
+      }
+    } catch (raw) {
+      const message = raw instanceof Error ? raw.message : String(raw);
+      Logger.error(`Failed to rebase branch ${branch}: ${message}`);
+      cleanGitState();
+      await execShell("git rebase --abort").catch(() => {});
+      await execShell("git checkout main -f").catch(() => {});
+    }
+  }
 
   await execShell("git checkout main -f");
 
