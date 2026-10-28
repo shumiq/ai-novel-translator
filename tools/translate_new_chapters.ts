@@ -30,19 +30,19 @@ async function main(): Promise<void> {
   let processedCount = 0;
 
   for (const branch of branches) {
+    // Reads the ref directly, so only "wip" branches need a working-tree checkout.
+    const lastMsg = await getLastCommitMessage(branch);
+
+    if (lastMsg !== "wip") {
+      Logger.info(`Skip branch ${branch} (latest commit is not "wip").`);
+      continue;
+    }
+
     cleanGitState();
 
     Logger.info(`Checking branch ${branch}...`);
     await execShell(`git checkout ${branch} -f`);
     cleanGitState();
-
-    const lastMsg = await getLastCommitMessage(branch);
-
-    if (lastMsg !== "wip") {
-      Logger.info(`Skip branch ${branch} (latest commit is not "wip").`);
-      cleanGitState();
-      continue;
-    }
 
     Logger.info(
       `Branch ${branch} has "wip" commit. Running translation pipeline...`,

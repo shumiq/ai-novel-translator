@@ -1,6 +1,7 @@
 // Name: Update Branches
 // Description: Rebase git branches and fetch new web chapters from upstream
-import { rmSync } from "fs";
+import { existsSync, readdirSync, rmSync } from "fs";
+import { basename } from "path";
 import {
   cleanGitState,
   execShell,
@@ -16,23 +17,52 @@ async function isBehindMain(branch: string): Promise<boolean> {
   return (await intFromShell(`git rev-list --count "${branch}..main"`)) > 0;
 }
 
-async function isCommitterDateOlderThan24h(branch: string): Promise<boolean> {
-  const committerTs = await intFromShell(`git log -1 --format=%ct "${branch}"`);
-  return Math.floor(Date.now() / 1000) - committerTs > 86400;
+// Read from the object DB, so each branch's paths are known without checkout.
+async function getBranchConfig(
+  branch: string,
+): Promise<{ originalPath: string; outputPath: string }> {
+  const cfg = await execShell(`git show "${branch}:config.ts"`);
+  const pick = (key: string) =>
+    new RegExp(`${key}:\\s*"([^"]*)"`).exec(cfg)?.[1] ?? "";
+  return { originalPath: pick("originalPath"), outputPath: pick("outputPath") };
+}
+
+function jsonNames(dir: string): string[] | null {
+  if (!dir || !existsSync(dir)) return null;
+  return readdirSync(dir).filter((f) => f.endsWith(".json"));
+}
+
+// Mirrors prepare.ts: copies any source *.json missing from ./json.
+async function hasNewChapters(branch: string): Promise<boolean> {
+  const { originalPath, outputPath } = await getBranchConfig(branch);
+  const sources = jsonNames(originalPath);
+  const outputs = jsonNames(outputPath);
+
+  // Unreadable source dir – cannot rule out new chapters, so fail open.
+  if (!sources && !outputs) return true;
+
+  const committed = new Set(
+    (await execShell(`git ls-tree -r --name-only "${branch}" -- json`))
+      .split("\n")
+      .map((f) => basename(f)),
+  );
+
+  return [...(sources ?? []), ...(outputs ?? [])].some(
+    (name) => !committed.has(name),
+  );
 }
 
 async function needsUpdate(branch: string): Promise<boolean> {
-  if (branch.startsWith("epub/")) return isBehindMain(branch);
-  return (
-    (await isBehindMain(branch)) || (await isCommitterDateOlderThan24h(branch))
-  );
+  if (await isBehindMain(branch)) return true;
+  if (!branch.startsWith("web/")) return false;
+  return hasNewChapters(branch);
 }
 
 async function processBranch(branch: string): Promise<void> {
   cleanGitState();
 
   if (!(await needsUpdate(branch))) {
-    Logger.info(`Skip branch ${branch} (up-to-date and recent commit).`);
+    Logger.info(`Skip branch ${branch} (up-to-date, no new chapters).`);
     return;
   }
 
