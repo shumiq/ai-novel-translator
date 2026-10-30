@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     cleanGitState();
 
     try {
-      const output = execSync("bun tools/check_bad_characters.ts --all", {
+      const output = execSync("bun tools/check_bad_characters.ts", {
         encoding: "utf-8",
       });
       Logger.info(`Branch ${branch}: No bad characters found.`);

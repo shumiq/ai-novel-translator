@@ -28,6 +28,7 @@ async function main(): Promise<void> {
   await execShell("git checkout main -f");
 
   let processedCount = 0;
+  const badCharReports: string[] = [];
 
   for (const branch of branches) {
     // Reads the ref directly, so only "wip" branches need a working-tree checkout.
@@ -63,6 +64,21 @@ async function main(): Promise<void> {
       cleanGitState();
       continue;
     }
+
+    // Run here so the branch's translated books/ files are still on disk.
+    // Report is printed at the end.
+    let report = "";
+    try {
+      report = execSync("bun tools/check_bad_characters.ts", {
+        encoding: "utf-8",
+        stdio: "pipe",
+      });
+    } catch (err) {
+      const failed = err as { stdout?: string; stderr?: string };
+      report = `${failed.stdout ?? ""}${failed.stderr ?? ""}`;
+    }
+    badCharReports.push(`--- ${branch} ---\n${report.trim()}`);
+
     rmSync(".temp", { recursive: true, force: true });
 
     Logger.info(
@@ -94,6 +110,11 @@ async function main(): Promise<void> {
     Logger.info("No branches had a 'wip' commit. Nothing to translate.");
   } else {
     Logger.info(`Finished processing ${processedCount} branch(es).`);
+  }
+
+  if (badCharReports.length > 0) {
+    Logger.step("🔍", "Bad character check results");
+    for (const report of badCharReports) console.log(report);
   }
 }
 
