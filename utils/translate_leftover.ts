@@ -65,7 +65,7 @@ ${qualityChecklist}`,
       },
     );
 
-    rmSync(".temp/INSTRUCTION.md");
+    rmSync(".temp/INSTRUCTION.md", { force: true });
   }
 }
 

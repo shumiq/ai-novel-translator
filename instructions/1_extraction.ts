@@ -13,12 +13,11 @@ import {
   HighDemandError,
   ProhibitedContentError,
 } from "../utils/ai";
-import { countLines } from "../utils/count_line";
 import { extractExistedWords } from "../utils/dictionary";
 import { getPreviousChapterContent } from "../utils/extract";
+import { isJapanese } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import { isJapanese } from "../utils/lang";
 import type { Dictonary } from "../utils/types";
 
 export async function extraction(file: string) {
@@ -64,7 +63,7 @@ CONSTRAINTS:
 1. Ignore common nouns, general verbs, or adjectives (e.g., 'sword', 'running', 'beautiful') unless they are part of a specific Title.
 2. The 'name' field MUST be the original ${novelConfig.originalLanguage}. Other fields MUST be in Thai. Split between first name and last name if it's a character.
 3. Fields for characters: gender, speaking_style, and prohibited_phrases (Thai).
-4. If a term is already in the 'Existed Words' list, ONLY include it if you are providing a NEW correction or additional detail, ie. from unknown gender to specified gender. Don't change translation to keep consistency between chapters.
+4. If a term is already in the 'Existed Words' list, ONLY include it if you are providing a NEW or improved 'description'. Only the 'description' field is used for existing terms; gender and translations are always ignored for them. Keep the existing translations unchanged when re-listing a term.
 5. Do not add parentheses in translations unless original or name contains parentheses.
 
 Additional Context: 
@@ -92,7 +91,7 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
     
     `
         : ""
-    }Instruction: Extract ONLY new or updated high-impact terms from the original_text above. Use the previous_chapter for context on recurring characters and terms. Do not extract common dictionary words or chapter titles. Avoid duplicating terms already in previously_extracted. Output in JSON.`,
+    }Instruction: Extract ONLY new high-impact terms from the original_text above, plus existing terms (from existed_words_reference) whose description needs a correction or more detail. Use the previous_chapter for context on recurring characters and terms. Do not extract common dictionary words or chapter titles. Avoid duplicating terms already in previously_extracted. Output in JSON.`,
         body: {
           generationConfig: {
             responseMimeType: "application/json",
@@ -220,8 +219,20 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
     let { name, type, ...rest } = item;
     name = name.toLowerCase();
     if (/[０-９]/.test(name) && JSON.stringify(rest).includes("ตอน")) continue;
-    if (currentData[name]) {
-      Logger.debug(`Skip existing term: ${name}`);
+    const existing = currentData[name];
+    if (existing) {
+      // Only description may change for existing terms; script-side guard, not just prompt.
+      const newDescription = rest.description;
+      if (
+        typeof newDescription === "string" &&
+        newDescription.trim() &&
+        newDescription !== existing.description
+      ) {
+        Logger.debug(`Update description for existing term: ${name}`);
+        existing.description = newDescription;
+      } else {
+        Logger.debug(`Skip existing term: ${name}`);
+      }
       continue;
     }
 
