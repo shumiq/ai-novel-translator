@@ -73,24 +73,16 @@ export function validate(
       }
     }
 
-    // original
-    // const countQuotesAndBrackets = (s: string) =>
-    //   (s.match(/["''""'\[\]【】｛｝{}〔〕〈〉《》「」『』〝〟«»]/g) || [])
-    //     .length;
-    const countQuotesAndBrackets = (s: string) =>
-      (s.match(/["\[\]【】｛｝{}〔〕〈〉《》「」『』〝〟«»]/g) || []).length;
-    const countParens = (s: string) => (s.match(/[\(\)（）]/g) || []).length;
-
     if (
-      countQuotesAndBrackets(beforeLine) !==
-        countQuotesAndBrackets(afterLine) &&
+      beforeLine.split(`"`).length !== afterLine.split(`"`).length &&
       appConfig.validation.quoteCount
     ) {
-      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${countQuotesAndBrackets(beforeLine)}, translated has ${countQuotesAndBrackets(afterLine)}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
+      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${beforeLine.split(`"`).length - 1}, translated has ${afterLine.split(`"`).length - 1}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
       Logger.error(msg);
       return msg;
     }
 
+    const countParens = (s: string) => (s.match(/[\(\)（）]/g) || []).length;
     if (
       countParens(afterLine) > countParens(beforeLine) &&
       appConfig.validation.parenthesesCount
