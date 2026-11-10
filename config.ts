@@ -11,7 +11,7 @@ export const appConfig = {
   provider: "gemini",
   model: {
     gemini: "gemini-flash-lite-latest",
-    opencode: "google/gemini-flash-lite-latest#high",
+    opencode: "console-gemini-proxy/gemini-flash-lite-latest#high",
     openrouter: "nvidia/nemotron-3-ultra-550b-a55b:free",
   },
   geminiAPIKeys: process.env.GEMINI_API_KEY
