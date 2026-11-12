@@ -1,8 +1,8 @@
 import { execSync } from "child_process";
 import { existsSync, cpSync } from "fs";
 import { cp, readdir, readFile, writeFile } from "fs/promises";
-import { join } from "path";
-import { novelConfig } from "../config";
+import { join, dirname } from "path";
+import { appConfig, novelConfig } from "../config";
 import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { extractTitleFromHtml } from "../utils/text";
@@ -96,6 +96,28 @@ export async function finalization() {
   if (novelConfig.dictionaryPath) {
     cpSync("./novel_data.json", novelConfig.dictionaryPath);
     Logger.info(`Copied: ./novel_data.json to ${novelConfig.dictionaryPath}`);
+
+    if (appConfig.autoPushDictionasry) {
+      // Commit & force-push the dictionary repo if the copy changed anything
+      const dictDir = dirname(novelConfig.dictionaryPath);
+      try {
+        const status = execSync("git status --porcelain", {
+          cwd: dictDir,
+        })
+          .toString()
+          .trim();
+        if (status) {
+          execSync("git add .", { cwd: dictDir });
+          execSync(`git commit -m "update" --amend`, { cwd: dictDir });
+          execSync(`git push -f`, { cwd: dictDir });
+          Logger.info("Dictionary changes committed and pushed");
+        } else {
+          Logger.info("No dictionary changes to commit");
+        }
+      } catch (e) {
+        Logger.error(`Failed to commit/push dictionary: ${e}`);
+      }
+    }
   }
 
   Logger.done("Finalization complete");
