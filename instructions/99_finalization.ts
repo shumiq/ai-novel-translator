@@ -6,6 +6,7 @@ import { appConfig, novelConfig } from "../config";
 import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { extractTitleFromHtml } from "../utils/text";
+import { displayPath } from "../utils/title";
 
 export async function finalization() {
   Logger.step("📦", "Finalization");
@@ -42,7 +43,9 @@ export async function finalization() {
             `./json/${ch}.json`,
             JSON.stringify({ title, content }, null, 2),
           );
-          Logger.progress(`Converted ${file} to JSON`);
+          Logger.progress(
+            `Converted ${displayPath(`./books/${file}`)} to JSON`,
+          );
 
           const chapter = meta.chapters.find((c) => c.ch === ch);
           if (chapter) {
@@ -86,7 +89,7 @@ export async function finalization() {
           const src = join("./json", file);
           const dest = join(novelConfig.outputPath, file);
           await cp(src, dest);
-          Logger.progress(`Copied: ${file}`);
+          Logger.progress(`Copied: ${displayPath(join("./json", file))}`);
         }),
       );
     }

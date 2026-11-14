@@ -3,7 +3,7 @@
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
 import { createInterface } from "node:readline/promises";
-import { useActiveTitle } from "../utils/title";
+import { displayPath, useActiveTitle } from "../utils/title";
 import {
   extractText,
   escapeRegex,
@@ -70,7 +70,9 @@ async function main() {
         { encoding: "utf-8" },
       ).toString();
     } catch {
-      console.log(`  Skipping ${file} (not found in HEAD, likely new file).`);
+      console.log(
+        `  Skipping ${displayPath(file)} (not found in HEAD, likely new file).`,
+      );
       continue;
     }
 
@@ -79,7 +81,9 @@ async function main() {
     try {
       currentContent = readFileSync(file, "utf-8");
     } catch {
-      console.log(`  Skipping ${file} (cannot read current file).`);
+      console.log(
+        `  Skipping ${displayPath(file)} (cannot read current file).`,
+      );
       continue;
     }
     const currentLines = currentContent.split(/\r?\n/);
@@ -118,7 +122,7 @@ async function main() {
   console.log(`\nFound ${matches.length} matching lines. Preview (first 10):`);
   for (let i = 0; i < Math.min(10, matches.length); i++) {
     const m = matches[i]!;
-    console.log(`  ${i + 1}. ${m.file}:${m.lineNum}`);
+    console.log(`  ${i + 1}. ${displayPath(m.file)}:${m.lineNum}`);
     console.log(
       `     ${CYAN}Original:${RESET} ${highlightIn(m.originalText, originalWord, YELLOW)}`,
     );
@@ -167,7 +171,9 @@ async function main() {
     const oldCount = countOccurrences(match.currentText, oldWord);
     const newCount = countOccurrences(newText, newWord);
 
-    console.log(`\n[${idx + 1}/${matches.length}] --- ${file}:${lineNum} ---`);
+    console.log(
+      `\n[${idx + 1}/${matches.length}] --- ${displayPath(file)}:${lineNum} ---`,
+    );
     console.log(
       `  ${CYAN}Original:${RESET} ${highlightIn(match.originalText, originalWord, YELLOW)}`,
     );

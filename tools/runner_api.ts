@@ -22,6 +22,7 @@ import {
   removeFirstFromQueue,
 } from "../utils/temp";
 import { sanitizeFile } from "@utils/sanitize";
+import { displayPath } from "../utils/title";
 
 const getFinalFile = (file: string) => {
   const files = [
@@ -46,7 +47,7 @@ export const runnerAPI = async () => {
     if (!file) break;
 
     count++;
-    Logger.step("", `[${count}] ${file}`);
+    Logger.step("", `[${count}] ${displayPath(file)}`);
 
     if (count >= LIMIT) {
       Logger.step("🧹", "Leftover cleanup");
@@ -61,7 +62,7 @@ export const runnerAPI = async () => {
       process.exit(1);
     }
 
-    Logger.info(`Sanitizing ${file} before processing...`);
+    Logger.info(`Sanitizing ${displayPath(file)} before processing...`);
     sanitizeFile(file);
 
     try {
@@ -110,7 +111,7 @@ export const runnerAPI = async () => {
             rmSync(`.temp/consistency_checked_${file.replaceAll("/", "_")}`);
           if (existsSync(finalOutputFile)) rmSync(finalOutputFile);
 
-          Logger.info(`Successfully completed: ${file}`);
+          Logger.info(`Successfully completed: ${displayPath(file)}`);
 
           if (appConfig.pipeline.includes("humanization")) {
             appendFileSync(".temp/humanized.txt", `${file}\n`);
@@ -122,7 +123,7 @@ export const runnerAPI = async () => {
           break;
         } else {
           Logger.error(
-            `Final output is not completely in Thai. Restarting pipeline for ${file}`,
+            `Final output is not completely in Thai. Restarting pipeline for ${displayPath(file)}`,
           );
           if (existsSync(`.temp/translated_${file.replaceAll("/", "_")}`))
             rmSync(`.temp/translated_${file.replaceAll("/", "_")}`);
@@ -134,7 +135,7 @@ export const runnerAPI = async () => {
         }
       }
     } catch (e) {
-      Logger.warn(`Found error on ${file}. Skipping this file.`);
+      Logger.warn(`Found error on ${displayPath(file)}. Skipping this file.`);
       // Clean up temp files for this file
       const safeName = file.replaceAll("/", "_");
       for (const prefix of [

@@ -7,7 +7,7 @@ import { novelConfig } from "../config";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 import { extractLinesFromHtml } from "../utils/text";
-import { useActiveTitle } from "../utils/title";
+import { displayPath, useActiveTitle } from "../utils/title";
 
 useActiveTitle();
 const episode = process.argv[2];
@@ -93,7 +93,7 @@ for (let i = 0; i < originalLines.length; i++) {
 
 if (fixed > 0) {
   writeFileSync(htmlPath, translatedLines.join("\n"));
-  Logger.done(`Fixed ${fixed} line(s) in ${htmlPath}`);
+  Logger.done(`Fixed ${fixed} line(s) in ${displayPath(htmlPath)}`);
 } else {
   Logger.done(`No quote discrepancies found in ${htmlPath}`);
 }

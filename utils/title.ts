@@ -1,8 +1,22 @@
 import { existsSync, readdirSync } from "fs";
-import { join } from "path";
-import { getActiveTitleId, novelDataRoot, TITLE_ID_RE } from "../config";
+import { isAbsolute, join, relative, resolve } from "path";
+import {
+  appRoot,
+  getActiveTitleId,
+  novelDataRoot,
+  TITLE_ID_RE,
+} from "../config";
 
 const TYPES = ["web", "epub"] as const;
+
+/**
+ * Render a path relative to the code repo root so terminals can open it when
+ * tools are launched from the repo root (tools chdir into the title folder).
+ */
+export function displayPath(file: string): string {
+  const absolute = isAbsolute(file) ? file : resolve(process.cwd(), file);
+  return relative(appRoot, absolute) || absolute;
+}
 
 export function listTitles(): string[] {
   const titles: string[] = [];

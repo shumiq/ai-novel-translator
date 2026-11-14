@@ -8,7 +8,7 @@ import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { appConfig, appRoot } from "../config";
 import { isLineCloseQuote, findProblematicLines } from "../utils/japanese";
-import { useActiveTitle } from "../utils/title";
+import { displayPath, useActiveTitle } from "../utils/title";
 
 useActiveTitle();
 const glob = new Glob("books/**/*html");
@@ -65,7 +65,7 @@ while (true) {
     if (unmatchedFiles.includes(file)) continue;
 
     writeFileSync(file, result.join("\n"));
-    Logger.progress(`Processed ${file}`);
+    Logger.progress(`Processed ${displayPath(file)}`);
   }
 
   if (unmatchedFiles.length === 0) {

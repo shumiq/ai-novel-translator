@@ -3,7 +3,7 @@
 import { readFileSync } from "fs";
 import { extractThai } from "../utils/extract";
 import { Logger } from "../utils/logger";
-import { useActiveTitle } from "../utils/title";
+import { displayPath, useActiveTitle } from "../utils/title";
 import { checkBadCharacters } from "../utils/validate";
 
 useActiveTitle();
@@ -23,7 +23,7 @@ let filesWithIssues = 0;
 
 for (const file of files) {
   const content = readFileSync(file, "utf-8");
-  const error = checkBadCharacters(content, file);
+  const error = checkBadCharacters(content, displayPath(file));
   if (error) {
     filesWithIssues++;
   }

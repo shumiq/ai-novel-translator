@@ -4,6 +4,7 @@ import { join } from "path";
 import { novelConfig } from "../config";
 import { Logger } from "../utils/logger";
 import { extractLinesFromHtml } from "../utils/text";
+import { displayPath } from "../utils/title";
 
 export async function preparation() {
   Logger.step("📦", "Preparation");
@@ -93,7 +94,7 @@ export async function preparation() {
     await Promise.all(
       copies.map(async ({ src, dest }) => {
         await cp(src, dest);
-        Logger.progress(`Copied: ${dest}`);
+        Logger.progress(`Copied: ${displayPath(dest)}`);
       }),
     );
   }
@@ -135,7 +136,7 @@ export async function preparation() {
   if (toConvert.length > 0) {
     await Promise.all(
       toConvert.map(async (file) => {
-        Logger.progress(`Converting ${file} to HTML...`);
+        Logger.progress(`Converting ${displayPath(file)} to HTML...`);
         const raw = await readFile(`./json/${file}`, "utf-8");
         const data = JSON.parse(raw) as { title: string; content: string };
 

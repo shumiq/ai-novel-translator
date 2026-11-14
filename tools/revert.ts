@@ -5,7 +5,7 @@ import { join } from "path";
 import { novelConfig } from "../config";
 import { preparation } from "../instructions/0_preparation";
 import { Logger } from "../utils/logger";
-import { useActiveTitle } from "../utils/title";
+import { displayPath, useActiveTitle } from "../utils/title";
 
 useActiveTitle();
 const episode = process.argv[2];
@@ -33,12 +33,14 @@ if (!existsSync(src)) {
 }
 
 cpSync(src, join("./json", `${episode}.json`));
-Logger.info(`Copied: ${src} → json/${episode}.json`);
+Logger.info(
+  `Copied: ${displayPath(src)} → ${displayPath(join("./json", `${episode}.json`))}`,
+);
 
 const htmlPath = join("./books", `${episode}.html`);
 if (existsSync(htmlPath)) {
   unlinkSync(htmlPath);
-  Logger.info(`Deleted: ${htmlPath}`);
+  Logger.info(`Deleted: ${displayPath(htmlPath)}`);
 }
 
 await preparation();
