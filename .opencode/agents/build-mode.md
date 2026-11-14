@@ -37,7 +37,8 @@ tools/               → Tool scripts (run with `bun tools/<name>.ts`)
   update_branches.ts      → Fetch new chapters into the data worktree (no branches)
   translate_new_chapters.ts → Translate titles marked .to_be_translated
   check_bad_characters_all_branch.ts → Check titles marked .to_check_bad_character
-  sanitize_all_branch.ts  → Sanitize/finalize all titles and commit changes
+  sanitize_all_branch.ts  → Sanitize/finalize all titles (leaves changes uncommitted)
+  squash_data_branch.ts   → Squash the data branch into one commit
   migrate_branches.ts     → One-time import of old web/* and epub/* branches
   merge_multiline_speech_jp.ts → Merge multi-line Japanese speech in HTML files
   translate_leftover.ts   → Translate leftover English/Japanese to Thai (auto-detect)

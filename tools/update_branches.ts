@@ -68,10 +68,10 @@ async function main(): Promise<void> {
         return;
       }
 
-      execSync("git add -- books json novel_data.json", { cwd: dir });
-      execSync(`git commit -m "prepare: ${id}"`, { cwd: dir });
       writeFileSync(join(dir, ".to_be_translated"), "");
-      Logger.info(`  └─ ${id}: committed and marked for translation`);
+      Logger.info(
+        `  └─ ${id}: changes left uncommitted; marked for translation`,
+      );
       updated++;
     } catch (raw) {
       failed++;

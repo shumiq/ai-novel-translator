@@ -195,7 +195,7 @@ Both are gitignored. Never use `.temp` for cross-step state; use the title marke
 - **Logging:** Use `utils/logger.ts` — `Logger.info()`, `Logger.warn()`, `Logger.error()`, `Logger.debug()` (debug gated by `appConfig.debug`).
 - **Validation:** `utils/validate.ts` checks line count, Thai detection, bracket/parenthesis matching, and starting character type. Controlled by `appConfig.validation` flags.
 - **Sanitization:** `utils/sanitize.ts` strips HTML to `<p>` lines, normalizes Japanese punctuation (quotes → `"`, brackets → `[...]`, fullwidth digits → ASCII, Thai digits → ASCII, etc.).
-- **Git auto-commit:** `runner_api.ts` runs `git add` on successfully translated files. Dictionary changes are also auto-staged.
+- **Git:** the pipeline stages data changes but never commits them. Review with `git -C ../novel-data diff --cached`, then commit manually or use `bun tools/squash_data_branch.ts` to squash everything into one commit.
 
 ### Configuration (`config.ts`)
 

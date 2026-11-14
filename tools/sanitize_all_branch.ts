@@ -1,7 +1,6 @@
 // Name: Sanitize All (Titles)
 // Description: Sanitize translated HTML and refresh JSON across all titles
 import { execSync } from "child_process";
-import { join } from "path";
 import { appRoot } from "../config";
 import { Logger } from "../utils/logger";
 import { forEachTitle } from "../utils/title";
@@ -10,7 +9,7 @@ async function main(): Promise<void> {
   let processed = 0;
   let failed = 0;
 
-  await forEachTitle(async (id, dir) => {
+  await forEachTitle(async (id) => {
     try {
       Logger.info(`Sanitizing ${id}...`);
       execSync("bun tools/sanitize_all.ts", {
@@ -26,20 +25,7 @@ async function main(): Promise<void> {
         env: { ...process.env, NOVEL_TITLE: id },
       });
 
-      const status = execSync(
-        "git status --porcelain -- books json novel_data.json",
-        { cwd: dir, encoding: "utf-8" },
-      );
-      if (!status.trim()) {
-        Logger.info(`No changes to commit for ${id}.`);
-        return;
-      }
-
-      execSync("git add -- books json novel_data.json", { cwd: dir });
-      execSync(`git commit -m ${JSON.stringify(`sanitize: ${id}`)}`, {
-        cwd: dir,
-      });
-      Logger.info(`Committed sanitize changes for ${id}.`);
+      Logger.info(`Sanitized ${id}; changes staged but uncommitted.`);
       processed++;
     } catch (raw) {
       failed++;
@@ -48,9 +34,7 @@ async function main(): Promise<void> {
     }
   });
 
-  Logger.done(
-    `Sanitized and committed ${processed} title(s), ${failed} failed`,
-  );
+  Logger.done(`Sanitized ${processed} title(s), ${failed} failed`);
   if (failed > 0) process.exit(1);
 }
 

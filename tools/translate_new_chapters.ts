@@ -27,17 +27,6 @@ function spawn(
   });
 }
 
-function commitTitle(id: string, dir: string, message: string): void {
-  const status = execSync(
-    "git status --porcelain -- books json novel_data.json",
-    { cwd: dir, encoding: "utf-8" },
-  );
-  if (!status.trim()) return;
-
-  execSync("git add -- books json novel_data.json", { cwd: dir });
-  execSync(`git commit -m ${JSON.stringify(message)}`, { cwd: dir });
-}
-
 async function main(): Promise<void> {
   let processed = 0;
   let failed = 0;
@@ -71,8 +60,9 @@ async function main(): Promise<void> {
 
       rmSync(marker, { force: true });
       writeFileSync(join(dir, ".to_check_bad_character"), "");
-      commitTitle(id, dir, `translate: ${id}`);
-      Logger.info(`  └─ ${id}: translation committed`);
+      Logger.info(
+        `  └─ ${id}: translation complete; changes staged but uncommitted`,
+      );
     } catch (raw) {
       failed++;
       const message = raw instanceof Error ? raw.message : String(raw);

@@ -48,7 +48,7 @@ Data lives in the `../novel-data` git worktree (branch `data`). Choose the title
   - **Pass 4 — Humanization:** Polishes Thai output for natural readability
 - Each pass validates line counts, Thai presence, bracket matching, and parentheses count; failed chunks are retried automatically (up to 5 retries)
 - The runner processes up to 10 files per run (configurable in `config.ts`)
-- Successful files are committed to git automatically
+- Successful files are staged but not committed; review with `git -C ../novel-data diff --cached`, then commit when ready (or use `bun tools/squash_data_branch.ts`)
 
 ### 4. Error Recovery
 
