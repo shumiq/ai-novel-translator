@@ -10,7 +10,7 @@ import {
   rmSync,
   writeFileSync,
 } from "fs";
-import { join } from "path";
+import { isAbsolute, join } from "path";
 import { appRoot, novelDataRoot } from "../config";
 import { Logger } from "../utils/logger";
 import type { NovelConfig } from "../utils/types";
@@ -31,7 +31,7 @@ function parseStringArray(source: string, key: string): string[] {
 
 function fromAppRoot(value: string): string {
   if (!value) return "";
-  return value.startsWith("/") ? value : join(appRoot, value);
+  return isAbsolute(value) ? value : join(appRoot, value);
 }
 
 function listBranches(pattern: string): string[] {
