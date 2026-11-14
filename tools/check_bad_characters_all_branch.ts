@@ -1,5 +1,6 @@
 // Name: Check Bad Characters (All Titles)
 // Description: Check for bad/unwanted characters across translated titles
+// Usage: bun tools/check_bad_characters_all_branch.ts [--all]
 import { execSync } from "child_process";
 import { existsSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
