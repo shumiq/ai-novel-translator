@@ -94,7 +94,11 @@ export async function geminiRequest({
         body: additionalBody,
       });
     }
-    const ai = new GoogleGenAI({ apiKey });
+    // The SDK defaults to v1, but `*-latest` aliases only exist on v1beta.
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: { apiVersion: "v1beta" },
+    });
 
     let response: GenerateContentResponse;
     try {
