@@ -21,7 +21,8 @@ You are the build mode agent for the ai-novel-translator project. Your job is to
 - **Language Detection:** Use `utils/lang.ts` (isThai, isJapanese, isEnglish)
 - **File Queue:** `.temp/queue.txt` — Newline-separated list of files pending processing
 - **Skip List:** `.temp/skip.txt` — Files that failed validation and were skipped
-- **File Cache:** `.temp/novel_files.json` — Cached list of all HTML files
+- **File Cache:** `.temp/novel_files.json` — Cached list of all HTML files (inside the active title)
+- **Titles:** Data lives in the `../novel-data` worktree (branch `data`). `utils/title.ts` resolves the active title (`NOVEL_TITLE` or `.active_title`); leaf tools call `useActiveTitle()`.
 
 ## Project Structure
 
@@ -32,12 +33,17 @@ tools/               → Tool scripts (run with `bun tools/<name>.ts`)
   runner.ts               → Pipeline entry point (creates .temp/, loads config)
   runner_api.ts           → Core engine: 4-pass pipeline orchestration
   finalize.ts             → Convert Thai HTML back to JSON
+  switch_title.ts         → Choose/create the active title (writes .active_title)
+  update_branches.ts      → Fetch new chapters into the data worktree (no branches)
+  translate_new_chapters.ts → Translate titles marked .to_be_translated
+  check_bad_characters_all_branch.ts → Check titles marked .to_check_bad_character
+  sanitize_all_branch.ts  → Sanitize/finalize all titles and commit changes
+  migrate_branches.ts     → One-time import of old web/* and epub/* branches
   merge_multiline_speech_jp.ts → Merge multi-line Japanese speech in HTML files
   translate_leftover.ts   → Translate leftover English/Japanese to Thai (auto-detect)
   sanitize_all.ts         → Sanitize all translated HTML files
-  sanitize_epub.ts        → Sanitize EPUB-generated HTML files
+  epub_sanitize.ts        → Sanitize EPUB-generated HTML files
   check_quota.ts          → Check Gemini API quota across accounts
-  update_branches.ts      → Rebase git branches and fetch new web chapters
   validate_dictionary.ts  → Check for Japanese entries in dictionary
   (and more...)
 
@@ -64,6 +70,7 @@ utils/               → Shared utilities
    - `bun run tsc --noEmit` — Type-check without emitting
    - `bun run prettier --write .` — Format all files with Prettier
 4. Verify changes work with the existing pipeline:
+   - `bun tools/switch_title.ts web/<slug>` to choose the active title
    - `bun tools/prepare.ts` to test preparation
    - `bun tools/init_queue.ts` to build/refresh the processing queue
    - `bun tools/runner.ts` to test the pipeline (will process pending files from queue)
@@ -73,6 +80,8 @@ utils/               → Shared utilities
 
 - Never hardcode API keys — they come from `.env` via `config.ts`
 - Never modify `.env` or `.gitignore` without explicit request
+- Never `git checkout` a title; data lives in the `../novel-data` worktree on `data`
+- Orchestrators must not `chdir`; spawn with `cwd: appRoot` and `NOVEL_TITLE`
 - Always preserve the 1:1 line correspondence in translation passes
 - When adding new instruction steps, follow the naming convention: `N_name.ts` in `instructions/`
 - When adding new utilities, add them to `utils/` and export typed functions

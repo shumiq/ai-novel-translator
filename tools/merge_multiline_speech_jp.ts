@@ -3,12 +3,14 @@
 import { execSync } from "child_process";
 import { Glob } from "bun";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { join, resolve } from "path";
 import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
-import { appConfig } from "../config";
+import { appConfig, appRoot } from "../config";
 import { isLineCloseQuote, findProblematicLines } from "../utils/japanese";
-import { ensureTempDir } from "../utils/temp";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 const glob = new Glob("books/**/*html");
 
 while (true) {
@@ -81,13 +83,13 @@ while (true) {
     const content = readFileSync(file, "utf-8");
     const lines = findProblematicLines(content);
     if (lines.length > 0) {
-      taskLines.push(`| ${file} | ${lines.join(", ")} |`);
+      taskLines.push(`| ${resolve(file)} | ${lines.join(", ")} |`);
     }
   }
 
-  ensureTempDir();
+  const instructionPath = join(appRoot, ".temp/INSTRUCTION.md");
   writeFileSync(
-    ".temp/INSTRUCTION.md",
+    instructionPath,
     `# Agent Task: Fix Unmatched Japanese Quote Characters
 
 ## Mode
@@ -132,11 +134,12 @@ ${taskLines.join("\n")}
   execSync(
     `opencode run "Fix unmatched Japanese quote characters" --auto --model ${appConfig.model.opencode} --agent japanese-quote-fixer`,
     {
+      cwd: appRoot,
       stdio: "inherit",
       timeout: 1000 * 60 * 10,
       killSignal: "SIGKILL",
     },
   );
 
-  rmSync(".temp/INSTRUCTION.md");
+  rmSync(instructionPath);
 }

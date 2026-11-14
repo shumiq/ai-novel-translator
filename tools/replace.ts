@@ -3,6 +3,7 @@
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
 import { createInterface } from "node:readline/promises";
+import { useActiveTitle } from "../utils/title";
 import {
   extractText,
   escapeRegex,
@@ -28,6 +29,7 @@ const CYAN = "\x1b[36m";
 const RESET = "\x1b[0m";
 
 async function main() {
+  useActiveTitle();
   const originalWord = await rl.question(
     "Enter original word to search for (in pre-translation text): ",
   );

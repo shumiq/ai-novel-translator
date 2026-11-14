@@ -1,76 +1,57 @@
-// Name: Sanitize All (Branch)
-// Description: Sanitize translated HTML files across all git web/* branches
-import { rmSync } from "fs";
-import {
-  cleanGitState,
-  execShell,
-  getBranches,
-  hasChanges,
-} from "../utils/git";
+// Name: Sanitize All (Titles)
+// Description: Sanitize translated HTML and refresh JSON across all titles
+import { execSync } from "child_process";
+import { join } from "path";
+import { appRoot } from "../config";
 import { Logger } from "../utils/logger";
-
-const BRANCH_PREFIX = "web/*";
-const SELF_SCRIPT = "sanitize_all_branch.ts";
+import { forEachTitle } from "../utils/title";
 
 async function main(): Promise<void> {
-  const branches = getBranches(BRANCH_PREFIX);
+  let processed = 0;
+  let failed = 0;
 
-  if (branches.length === 0) {
-    Logger.info("No web/* branches found.");
-    return;
-  }
+  await forEachTitle(async (id, dir) => {
+    try {
+      Logger.info(`Sanitizing ${id}...`);
+      execSync("bun tools/sanitize_all.ts", {
+        cwd: appRoot,
+        stdio: "inherit",
+        env: { ...process.env, NOVEL_TITLE: id },
+      });
 
-  Logger.info(`Found ${branches.length} web/* branches to sanitize.`);
+      Logger.info(`Finalizing ${id}...`);
+      execSync("bun tools/finalize.ts", {
+        cwd: appRoot,
+        stdio: "inherit",
+        env: { ...process.env, NOVEL_TITLE: id },
+      });
 
-  await execShell("git checkout main -f");
+      const status = execSync(
+        "git status --porcelain -- books json novel_data.json",
+        { cwd: dir, encoding: "utf-8" },
+      );
+      if (!status.trim()) {
+        Logger.info(`No changes to commit for ${id}.`);
+        return;
+      }
 
-  let processedCount = 0;
-
-  for (const branch of branches) {
-    cleanGitState();
-
-    Logger.info(`Checking branch ${branch}...`);
-    await execShell(`git checkout ${branch} -f`);
-    cleanGitState();
-
-    Logger.info(`Sanitizing files on branch ${branch}...`);
-    await execShell("bun tools/sanitize_all.ts");
-
-    Logger.info(`Finalizing files on branch ${branch}...`);
-    await execShell("bun tools/finalize.ts");
-
-    rmSync(".temp", { recursive: true, force: true });
-
-    if (!(await hasChanges())) {
-      Logger.info(`No changes to commit for ${branch}.`);
-      cleanGitState();
-      continue;
+      execSync("git add -- books json novel_data.json", { cwd: dir });
+      execSync(`git commit -m ${JSON.stringify(`sanitize: ${id}`)}`, {
+        cwd: dir,
+      });
+      Logger.info(`Committed sanitize changes for ${id}.`);
+      processed++;
+    } catch (raw) {
+      failed++;
+      const message = raw instanceof Error ? raw.message : String(raw);
+      Logger.error(`Failed to sanitize ${id}: ${message}`);
     }
+  });
 
-    processedCount++;
-
-    Logger.info(`Staging changes for branch ${branch}...`);
-    await execShell(`git add --all -- ":!${SELF_SCRIPT}" ":!.temp"`);
-
-    if (!(await hasChanges())) {
-      Logger.info(`Nothing staged for ${branch} after filtering.`);
-      cleanGitState();
-      continue;
-    }
-
-    Logger.info(`Amending last commit on ${branch}...`);
-    await execShell("git commit --amend --no-edit");
-
-    cleanGitState();
-  }
-
-  await execShell("git checkout main -f");
-
-  if (processedCount === 0) {
-    Logger.info("No branches had files to sanitize.");
-  } else {
-    Logger.info(`Sanitized and amended ${processedCount} branch(es).`);
-  }
+  Logger.done(
+    `Sanitized and committed ${processed} title(s), ${failed} failed`,
+  );
+  if (failed > 0) process.exit(1);
 }
 
 main().catch((err) => {

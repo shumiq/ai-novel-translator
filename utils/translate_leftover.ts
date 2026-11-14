@@ -2,11 +2,11 @@
 // Description: Shared utilities for translating leftover English/Japanese text in translated Thai HTML files
 import { execSync } from "child_process";
 import { readFileSync, rmSync, writeFileSync } from "fs";
-import { appConfig } from "../config";
+import { join, resolve } from "path";
+import { appConfig, appRoot } from "../config";
 import { extractThai } from "./extract";
 import { isEnglish, isJapanese, isThai } from "./lang";
 import { Logger } from "./logger";
-import { ensureTempDir } from "./temp";
 
 function getEnglishLines(text: string) {
   return text
@@ -39,7 +39,7 @@ function runLeftoverCleanup(
       const content = readFileSync(file, "utf-8");
       const lines = getLines(content);
       if (lines.length === 0) continue;
-      toBeTranslated.push(`| ${file} | ${lines.join(", ")} |`);
+      toBeTranslated.push(`| ${resolve(file)} | ${lines.join(", ")} |`);
     }
 
     if (toBeTranslated.length === 0) {
@@ -47,9 +47,9 @@ function runLeftoverCleanup(
       process.exit(0);
     }
 
-    ensureTempDir();
+    const instructionPath = join(appRoot, ".temp/INSTRUCTION.md");
     writeFileSync(
-      ".temp/INSTRUCTION.md",
+      instructionPath,
       `${instructionHeader}
 ${toBeTranslated.slice(0, 3).join("\n")}
 
@@ -59,13 +59,14 @@ ${qualityChecklist}`,
     execSync(
       `opencode run "${taskDescription}" --auto --model ${appConfig.model.opencode} --agent leftover-translator`,
       {
+        cwd: appRoot,
         stdio: "inherit",
         timeout: 1000 * 60 * 10,
         killSignal: "SIGKILL",
       },
     );
 
-    rmSync(".temp/INSTRUCTION.md", { force: true });
+    rmSync(instructionPath, { force: true });
   }
 }
 

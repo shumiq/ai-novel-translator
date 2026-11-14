@@ -1,121 +1,97 @@
 // Name: Translate New Chapters
-// Description: Translate newly fetched chapters from web/* branches using the full pipeline
+// Description: Translate titles marked .to_be_translated with the full pipeline
 import { execSync } from "child_process";
-import { rmSync } from "fs";
-import { novelConfig } from "../config";
-import {
-  cleanGitState,
-  execShell,
-  getBranches,
-  getLastCommitMessage,
-  hasStagedChanges,
-} from "../utils/git";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
+import { appRoot } from "../config";
 import { Logger } from "../utils/logger";
+import { forEachTitle } from "../utils/title";
+import type { NovelConfig } from "../utils/types";
 
-const BRANCH_PREFIX = "web/*";
-const SELF_SCRIPT = "translate_new_chapters.ts";
+function readTitleConfig(dir: string): NovelConfig {
+  return JSON.parse(
+    readFileSync(join(dir, "novel_config.json"), "utf-8"),
+  ) as NovelConfig;
+}
+
+function spawn(
+  script: string,
+  id: string,
+  stdio: "inherit" | "pipe" = "inherit",
+) {
+  return execSync(`bun tools/${script}`, {
+    cwd: appRoot,
+    stdio,
+    encoding: "utf-8",
+    env: { ...process.env, NOVEL_TITLE: id },
+  });
+}
+
+function commitTitle(id: string, dir: string, message: string): void {
+  const status = execSync(
+    "git status --porcelain -- books json novel_data.json",
+    { cwd: dir, encoding: "utf-8" },
+  );
+  if (!status.trim()) return;
+
+  execSync("git add -- books json novel_data.json", { cwd: dir });
+  execSync(`git commit -m ${JSON.stringify(message)}`, { cwd: dir });
+}
 
 async function main(): Promise<void> {
-  const branches = getBranches(BRANCH_PREFIX);
-
-  if (branches.length === 0) {
-    Logger.info("No web/* branches found.");
-    return;
-  }
-
-  Logger.info(`Found ${branches.length} web/* branches to check.`);
-
-  await execShell("git checkout main -f");
-
-  let processedCount = 0;
+  let processed = 0;
+  let failed = 0;
   const badCharReports: string[] = [];
 
-  for (const branch of branches) {
-    // Reads the ref directly, so only "wip" branches need a working-tree checkout.
-    const lastMsg = await getLastCommitMessage(branch);
-
-    if (lastMsg !== "wip") {
-      Logger.info(`Skip branch ${branch} (latest commit is not "wip").`);
-      continue;
+  await forEachTitle(async (id, dir) => {
+    const marker = join(dir, ".to_be_translated");
+    if (!existsSync(marker)) {
+      Logger.info(`Skip ${id} (not marked for translation)`);
+      return;
     }
 
-    cleanGitState();
-
-    Logger.info(`Checking branch ${branch}...`);
-    await execShell(`git checkout ${branch} -f`);
-    cleanGitState();
-
-    Logger.info(
-      `Branch ${branch} has "wip" commit. Running translation pipeline...`,
-    );
-    processedCount++;
+    Logger.info(`Translating ${id}...`);
+    processed++;
 
     try {
-      if (novelConfig.originalLanguage === "Japanese") {
-        execSync(`bun tools/merge_multiline_speech_jp.ts`, {
-          encoding: "utf-8",
-          stdio: "inherit",
-        });
+      const config = readTitleConfig(dir);
+      if (config.originalLanguage === "Japanese") {
+        spawn("merge_multiline_speech_jp.ts", id);
       }
-      execSync("bun start", { encoding: "utf-8", stdio: "inherit" });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      Logger.error(`Translation pipeline failed for branch ${branch}: ${msg}`);
-      cleanGitState();
-      continue;
+      spawn("start_translation_pipeline.ts", id);
+
+      let report = "";
+      try {
+        report = spawn("check_bad_characters.ts", id, "pipe");
+      } catch (err) {
+        const failedErr = err as { stdout?: string; stderr?: string };
+        report = `${failedErr.stdout ?? ""}${failedErr.stderr ?? ""}`;
+      }
+      badCharReports.push(`--- ${id} ---\n${report.trim()}`);
+
+      rmSync(marker, { force: true });
+      writeFileSync(join(dir, ".to_check_bad_character"), "");
+      commitTitle(id, dir, `translate: ${id}`);
+      Logger.info(`  └─ ${id}: translation committed`);
+    } catch (raw) {
+      failed++;
+      const message = raw instanceof Error ? raw.message : String(raw);
+      Logger.error(`Translation failed for ${id}: ${message} (marker kept)`);
     }
+  });
 
-    // Run here so the branch's translated books/ files are still on disk.
-    // Report is printed at the end.
-    let report = "";
-    try {
-      report = execSync("bun tools/check_bad_characters.ts", {
-        encoding: "utf-8",
-        stdio: "pipe",
-      });
-    } catch (err) {
-      const failed = err as { stdout?: string; stderr?: string };
-      report = `${failed.stdout ?? ""}${failed.stderr ?? ""}`;
-    }
-    badCharReports.push(`--- ${branch} ---\n${report.trim()}`);
-
-    rmSync(".temp", { recursive: true, force: true });
-
-    Logger.info(
-      `Translation complete for ${branch}. Squashing changes into "start" commit...`,
-    );
-
-    await execShell("git reset --soft HEAD~1");
-
-    await execShell("git rm --cached -r --ignore-unmatch .temp");
-    await execShell(`git add --all -- ":!${SELF_SCRIPT}" ":!.temp"`);
-
-    if (!(await hasStagedChanges())) {
-      Logger.info(`No new content to commit for ${branch}.`);
-      cleanGitState();
-      continue;
-    }
-
-    await execShell("git commit --amend --no-edit");
-
-    Logger.info(
-      `Squashed translation changes into "start" commit on ${branch}.`,
-    );
-    cleanGitState();
-  }
-
-  await execShell("git checkout main -f");
-
-  if (processedCount === 0) {
-    Logger.info("No branches had a 'wip' commit. Nothing to translate.");
+  if (processed === 0) {
+    Logger.info("No titles marked for translation.");
   } else {
-    Logger.info(`Finished processing ${processedCount} branch(es).`);
+    Logger.done(`Processed ${processed} title(s), ${failed} failed`);
   }
 
   if (badCharReports.length > 0) {
     Logger.step("🔍", "Bad character check results");
     for (const report of badCharReports) console.log(report);
   }
+
+  if (failed > 0) process.exit(1);
 }
 
 main().catch((err) => {

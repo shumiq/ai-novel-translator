@@ -5,7 +5,9 @@ import { join } from "path";
 import { novelConfig } from "../config";
 import { preparation } from "../instructions/0_preparation";
 import { Logger } from "../utils/logger";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 const episode = process.argv[2];
 
 if (!episode) {

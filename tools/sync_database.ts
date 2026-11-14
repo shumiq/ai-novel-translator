@@ -19,8 +19,9 @@ import { extractExistedWords } from "../utils/dictionary";
 import { isJapanese } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import type { Dictonary } from "../utils/types";
 import { ensureTempDir } from "../utils/temp";
+import { useActiveTitle } from "../utils/title";
+import type { Dictonary } from "../utils/types";
 
 async function syncDatabase() {
   ensureTempDir();
@@ -283,6 +284,7 @@ Instruction: Extract ONLY new or updated high-impact terms by comparing the orig
   );
 }
 
+useActiveTitle();
 syncDatabase();
 
 if (novelConfig.dictionaryPath) {

@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, unlinkSync } from "fs";
 import { Glob } from "bun";
 import { appConfig } from "../config";
+import { useActiveTitle } from "../utils/title";
 
 const PART_RE = /^(.+)\.part_(\d+)\.(html|xhtml)$/;
 
@@ -49,6 +50,7 @@ export function epubJoin() {
 }
 
 if (import.meta.main) {
+  useActiveTitle();
   const count = epubJoin();
   console.log(`Joined ${count} file(s)`);
 }

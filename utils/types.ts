@@ -4,6 +4,15 @@ export type AIRequest = {
   body?: object;
 };
 
+export type NovelConfig = {
+  originalPath: string;
+  outputPath: string;
+  dictionaryPath: string;
+  title: string;
+  originalLanguage: string;
+  additionalContext: string[];
+};
+
 export type Dictonary = {
   [key: string]:
     | {

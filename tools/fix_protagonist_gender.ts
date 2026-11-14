@@ -17,6 +17,7 @@ import {
 import { countLines } from "../utils/count_line";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
+import { useActiveTitle } from "../utils/title";
 import { validate } from "../utils/validate";
 
 const FINISH_FILE = ".temp/fix_gender_finish.txt";
@@ -227,4 +228,5 @@ async function main() {
   }
 }
 
+useActiveTitle();
 main();

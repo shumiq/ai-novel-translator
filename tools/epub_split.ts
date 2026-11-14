@@ -3,6 +3,7 @@
 import { readFileSync, unlinkSync, writeFileSync } from "fs";
 import { appConfig } from "../config";
 import { extractNonThai, extractThai } from "../utils/extract";
+import { useActiveTitle } from "../utils/title";
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -68,6 +69,7 @@ export function epubSplit() {
 }
 
 if (import.meta.main) {
+  useActiveTitle();
   const seps = appConfig.epub_seprarator;
   console.assert(isSeparatorLine("<p>◇　◇　◇</p>", seps));
   console.assert(isSeparatorLine("<p>* * *</p>", seps));

@@ -5,7 +5,9 @@ import { appConfig } from "../config";
 import { extractNonThai, extractThai, getAllFiles } from "../utils/extract";
 import { Logger } from "../utils/logger";
 import { ensureTempDir, writeQueue } from "../utils/temp";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 ensureTempDir();
 
 Logger.info("Initializing queue...");

@@ -3,7 +3,10 @@
 import { readFileSync } from "fs";
 import { extractThai } from "../utils/extract";
 import { Logger } from "../utils/logger";
+import { useActiveTitle } from "../utils/title";
 import { checkBadCharacters } from "../utils/validate";
+
+useActiveTitle();
 
 // --- main ---
 

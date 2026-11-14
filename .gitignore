@@ -41,3 +41,9 @@ books/**/*
 !books/**/*.xhtml
 !books/**/*.opf
 .antigravitycli
+
+# active title selection (set by tools/switch_title.ts)
+.active_title
+
+# pipeline temp state
+.temp/

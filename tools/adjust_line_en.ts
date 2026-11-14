@@ -2,7 +2,9 @@
 // Description: Adjust English lines in HTML files by applying sanitization rules
 import { readFileSync, writeFileSync } from "fs";
 import { adjustEnglishLines } from "../utils/sanitize";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 const targetFiles: string[] = [];
 
 targetFiles.forEach((file) => {

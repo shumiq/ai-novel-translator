@@ -4,6 +4,19 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 
 ---
 
+## Titles and data worktree
+
+Novel data lives in a separate git worktree at `../novel-data` on the `data` branch of this repository. The code repo stays on `main`; there are no per-title branches.
+
+- `web/<slug>/` and `epub/<slug>/` each hold `books/`, `json/`, `novel_data.json`, and `novel_config.json`.
+- The active title is `NOVEL_TITLE` (wins) or `.active_title` at the code repo root.
+- Leaf tools call `useActiveTitle()` from `utils/title.ts`, which chdirs into the title folder.
+- Orchestrators must **not** chdir. Spawn children with `cwd: appRoot` and `NOVEL_TITLE=<id>`.
+- Pipeline state lives in `<title>/.temp/`; agent IO lives in `<appRoot>/.temp/`.
+- Per-title markers: `.to_be_translated` and `.to_check_bad_character` (gitignored).
+
+---
+
 ## 1. api-fallback-handler (`.opencode/agents/api-fallback-handler.md`)
 
 **Purpose:** Acts as a secondary processing layer when primary AI API calls (Gemini) fail, time out, or return unexpected errors.
@@ -16,7 +29,7 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 
 **Workflow:**
 
-1. Read `.temp/INSTRUCTION.md` for operational context
+1. Read `.temp/INSTRUCTION.md` for operational context (written to the code repo's `.temp/`)
 2. Read `.temp/PROMPT.md` for the specific prompt
 3. Execute with strict output constraints (no filler, no markdown fences, line-count integrity)
 4. Write result to `.temp/output.txt`
@@ -35,12 +48,13 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 
 **Workflow:**
 
-1. Check project configuration (`config.ts`)
-2. Run `bun tools/prepare.ts` to set up directories and convert JSON to HTML
-3. Run `bun tools/init_queue.ts` to build a processing queue from non-Thai files
-4. Run `bun tools/runner.ts` to execute the 4-pass AI pipeline (extraction → translation → consistency → humanization)
-5. Handle retries via `queue.txt` and `skip.txt` for error recovery
-6. Run `bun tools/finalize.ts` to convert Thai HTML back to JSON
+1. Check project configuration (`config.ts`) and the active title
+2. Run `bun tools/switch_title.ts [web/slug]` to choose the title
+3. Run `bun tools/prepare.ts` to set up directories and convert JSON to HTML
+4. Run `bun tools/init_queue.ts` to build a processing queue from non-Thai files
+5. Run `bun tools/runner.ts` to execute the 4-pass AI pipeline (extraction → translation → consistency → humanization)
+6. Handle retries via `queue.txt` and `skip.txt` for error recovery
+7. Run `bun tools/finalize.ts` to convert Thai HTML back to JSON
 
 ---
 
@@ -77,7 +91,7 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 **Workflow:**
 
 1. `merge_multiline_speech_jp.ts` scans HTML files for multi-line speech patterns
-2. If it finds unbalanced quotes that can't be automatically merged, it writes a task list to `.temp/INSTRUCTION.md` and dispatches via `opencode run --agent japanese-quote-fixer`
+2. If it finds unbalanced quotes that can't be automatically merged, it writes a task list to the code repo's `.temp/INSTRUCTION.md` (with absolute file paths) and dispatches via `opencode run --agent japanese-quote-fixer`
 3. The agent reads the instruction file, edits the specified files/line numbers directly, and preserves all HTML structure
 4. After the agent finishes, `merge_multiline_speech_jp.ts` retries the merge
 
@@ -96,7 +110,7 @@ This project defines 5 agent roles for different use cases. Each role has a dedi
 **Workflow:**
 
 1. Run `bun tools/translate_leftover.ts` to detect and translate leftover non-Thai lines (auto-detects language from `novelConfig.originalLanguage`)
-2. The script scans translated HTML files, identifies non-Thai lines, writes a task list to `.temp/INSTRUCTION.md`, and dispatches the work via `opencode run --agent leftover-translator`
+2. The script scans translated HTML files, identifies non-Thai lines, writes a task list to the code repo's `.temp/INSTRUCTION.md` (with absolute file paths), and dispatches the work via `opencode run --agent leftover-translator`
 3. The agent reads the instruction file, edits the specified files/line numbers directly, and preserves all HTML structure
 
 ---
@@ -140,23 +154,29 @@ The top-level agent (this file) should:
 3. **Consistency** (`instructions/3_consistency.ts`) — Fixes dictionary mismatches across translated text.
 4. **Humanization** (`instructions/4_humanization.ts`) — Polishes Thai output for naturalness.
 
-Entry points: `bun tools/prepare.ts` → `bun tools/init_queue.ts` → `bun tools/runner.ts` → `bun tools/finalize.ts` (or `start.bat` for the full loop).
+Entry points: `bun tools/switch_title.ts` → `bun tools/prepare.ts` → `bun tools/init_queue.ts` → `bun tools/runner.ts` → `bun tools/finalize.ts` (or `start.bat` for the full loop).
+
+### Titles and data worktree
+
+- Data lives in the `../novel-data` worktree (branch `data`), never on `main`.
+- `config.ts` loads `novelConfig` from `../novel-data/<NOVEL_TITLE or .active_title>/novel_config.json` and resolves its paths against the code repo root.
+- `utils/title.ts` owns `listTitles()`, `titleDir()`, `useActiveTitle()`, and `forEachTitle()`.
+- Leaf tools call `useActiveTitle()` at startup; orchestrators spawn children with `cwd: appRoot` and `NOVEL_TITLE`.
+- Git commands that touch title data run with `cwd` set to the title folder (or `git -C`), so they only stage that title.
 
 ### File formats
 
 - **HTML files** in `books/` use `<p>line</p>` markup, one line per `<p>` tag. **1:1 line correspondence between input and output is enforced** — validation will fail and restart the pipeline if line counts mismatch.
 - **Dictionary** (`novel_data.json`): JSON object keyed by lowercase Japanese term. Each entry has `translations` (Thai array), `description`, and optionally `gender`, `base_style`, `negative_constraints`, `example`.
 
-### Temp directory (`.temp/`)
+### Temp directories
 
-Ephemeral working directory. All intermediate state lives here:
+Two separate temp directories:
 
-- `queue.txt` — Newline-separated files pending processing (populated by `init_queue.ts`)
-- `skip.txt` — Files that failed validation or hit prohibited content
-- `humanized.txt` — Files that completed humanization (excluded from re-queue)
-- `novel_files.json` — Cached file list (refreshed by `getAllFiles({ force: true })`)
-- Per-file intermediates: `extraction_<name>`, `translated_<name>`, `consistency_checked_<name>`, `final_humanized_<name>`
-- API key rotation: `<key>` sentinel files (deleted after 1 hour)
+- `<title>/.temp/` — pipeline state: `queue.txt`, `skip.txt`, `humanized.txt`, `novel_files.json`, per-file intermediates, API key sentinels.
+- `<appRoot>/.temp/` — agent IO: `INSTRUCTION.md`, `PROMPT.md`, `output.txt`.
+
+Both are gitignored. Never use `.temp` for cross-step state; use the title markers.
 
 ### API and AI calls
 
@@ -179,8 +199,9 @@ Ephemeral working directory. All intermediate state lives here:
 
 ### Configuration (`config.ts`)
 
-- `novelConfig` — Novel metadata: paths, language, title, additional context for extraction.
-- `appConfig` — Runtime settings: provider (`gemini`/`openrouter`/`opencode`), models, pipeline steps, validation flags, chunk sizes, debug toggle.
+- `novelConfig` — Loaded at import time from the active title's `novel_config.json`; paths are resolved to absolute paths against `appRoot`.
+- `appConfig` — Runtime settings: provider (`gemini`/`openrouter`/`opencode`), models, `novelDataPath`, pipeline steps, validation flags, chunk sizes, debug toggle.
+- `appRoot` / `novelDataRoot` — Absolute code repo root and data worktree root (resolved once, so a later `chdir` cannot change them).
 
 ### Important gotchas
 

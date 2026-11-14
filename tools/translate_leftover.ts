@@ -5,7 +5,9 @@ import {
   translateLeftoverEnglish,
   translateLeftoverJapanese,
 } from "../utils/translate_leftover";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 if (novelConfig.originalLanguage === "Japanese") {
   translateLeftoverJapanese();
 } else {

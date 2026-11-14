@@ -7,7 +7,9 @@ import { novelConfig } from "../config";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 import { extractLinesFromHtml } from "../utils/text";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 const episode = process.argv[2];
 
 if (!episode) {

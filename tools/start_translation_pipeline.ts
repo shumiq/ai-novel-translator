@@ -1,9 +1,10 @@
 // Name: Start Translation Pipeline
 // Description: Loop prepare → init_queue → runner until the queue drains, then finalize
 import { spawn, spawnSync } from "child_process";
+import { appRoot } from "../config";
 
 const run = (script: string) =>
-  spawnSync("bun", [`tools/${script}`], { stdio: "inherit" });
+  spawnSync("bun", [`tools/${script}`], { stdio: "inherit", cwd: appRoot });
 
 while (true) {
   run("prepare.ts");

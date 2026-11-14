@@ -1,45 +1,40 @@
-// Name: Check Bad Characters (All Branches)
-// Description: Check for bad/unwanted characters across all git web/* branches
+// Name: Check Bad Characters (All Titles)
+// Description: Check for bad/unwanted characters across translated titles
 import { execSync } from "child_process";
-import { rmSync, writeFileSync } from "fs";
-import { cleanGitState, execShell, getBranches } from "../utils/git";
+import { existsSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
+import { appRoot } from "../config";
 import { Logger } from "../utils/logger";
+import { forEachTitle } from "../utils/title";
 
-const BRANCH_PREFIX = "web/*";
+const ALL = process.argv.includes("--all");
 
-interface BranchIssue {
-  branch: string;
+interface TitleIssue {
+  title: string;
   output: string;
 }
 
 async function main(): Promise<void> {
-  const branches = getBranches(BRANCH_PREFIX);
+  const issues: TitleIssue[] = [];
+  let checked = 0;
 
-  if (branches.length === 0) {
-    Logger.info("No web/* branches found.");
-    return;
-  }
+  await forEachTitle(async (id, dir) => {
+    const marker = join(dir, ".to_check_bad_character");
+    if (!ALL && !existsSync(marker)) {
+      Logger.info(`Skip ${id} (not marked for checking)`);
+      return;
+    }
 
-  Logger.info(`Found ${branches.length} web/* branches to check.`);
-
-  await execShell("git checkout main -f");
-
-  const issues: BranchIssue[] = [];
-
-  for (const branch of branches) {
-    rmSync(".temp", { recursive: true, force: true });
-    cleanGitState();
-
-    Logger.info(`Checking branch ${branch}...`);
-    await execShell(`git checkout ${branch} -f`);
-    cleanGitState();
-
+    checked++;
     try {
       const output = execSync("bun tools/check_bad_characters.ts", {
+        cwd: appRoot,
         encoding: "utf-8",
+        env: { ...process.env, NOVEL_TITLE: id },
       });
-      Logger.info(`Branch ${branch}: No bad characters found.`);
+      Logger.info(`${id}: No bad characters found.`);
       Logger.debug(output);
+      if (existsSync(marker)) rmSync(marker, { force: true });
     } catch (err) {
       const output =
         err instanceof Error && "stdout" in err
@@ -47,34 +42,33 @@ async function main(): Promise<void> {
           : err instanceof Error
             ? err.message
             : String(err);
-      Logger.warn(`Branch ${branch}: Found issues.`);
-      issues.push({ branch, output });
+      Logger.warn(`${id}: Found issues.`);
+      issues.push({ title: id, output });
     }
+  });
 
-    cleanGitState();
-  }
-
-  rmSync(".temp", { recursive: true, force: true });
-  await execShell("git checkout main -f");
-
-  if (issues.length === 0) {
-    Logger.done("No bad characters found in any web/* branch.");
+  if (checked === 0) {
+    Logger.done("No titles to check.");
     return;
   }
 
-  // Write report
+  if (issues.length === 0) {
+    Logger.done("No bad characters found in any title.");
+    return;
+  }
+
   const reportLines: string[] = [
     "# Bad Characters Report",
     "",
-    `Checked ${branches.length} web/* branches.`,
-    `Found issues in ${issues.length} branch(es).`,
+    `Checked ${checked} title(s).`,
+    `Found issues in ${issues.length} title(s).`,
     "",
     "---",
     "",
   ];
 
   for (const issue of issues) {
-    reportLines.push(`## Branch: ${issue.branch}`);
+    reportLines.push(`## Title: ${issue.title}`);
     reportLines.push("");
     reportLines.push("```");
     reportLines.push(issue.output.trim());
@@ -82,12 +76,12 @@ async function main(): Promise<void> {
     reportLines.push("");
   }
 
-  const reportPath = "check_bad_characters_report.md";
+  const reportPath = join(appRoot, "check_bad_characters_report.md");
   writeFileSync(reportPath, reportLines.join("\n"), "utf-8");
   Logger.info(`Report written to ${reportPath}`);
 
   Logger.error(
-    `Bad characters found in ${issues.length} branch(es). See ${reportPath} for details.`,
+    `Bad characters found in ${issues.length} title(s). See ${reportPath} for details.`,
   );
   process.exit(1);
 }

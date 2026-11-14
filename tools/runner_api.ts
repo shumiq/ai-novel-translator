@@ -8,7 +8,8 @@ import {
   rmSync,
   writeFileSync,
 } from "fs";
-import { appConfig, novelConfig } from "../config";
+import { join } from "path";
+import { appConfig, appRoot, novelConfig } from "../config";
 import { extraction } from "../instructions/1_extraction";
 import { translation } from "../instructions/2_translation";
 import { consistencyCheck } from "../instructions/3_consistency";
@@ -50,7 +51,10 @@ export const runnerAPI = async () => {
     if (count >= LIMIT) {
       Logger.step("🧹", "Leftover cleanup");
       Logger.info("  └─ translate_leftover");
-      execSync(`bun tools/translate_leftover.ts`);
+      execSync(
+        `bun ${JSON.stringify(join(appRoot, "tools/translate_leftover.ts"))}`,
+        { cwd: appRoot, stdio: "inherit" },
+      );
 
       Logger.warn(`Reached limit of ${LIMIT} files. Resetting skip list.`);
       if (appConfig.loopSkip) writeFileSync(".temp/skip.txt", "");
@@ -149,7 +153,10 @@ export const runnerAPI = async () => {
 
   Logger.step("🧹", "Leftover cleanup");
   Logger.info("  └─ translate_leftover");
-  execSync(`bun tools/translate_leftover.ts`);
+  execSync(
+    `bun ${JSON.stringify(join(appRoot, "tools/translate_leftover.ts"))}`,
+    { cwd: appRoot, stdio: "inherit" },
+  );
 
   if (
     readFileSync(".temp/queue.txt", "utf-8").trim() ||

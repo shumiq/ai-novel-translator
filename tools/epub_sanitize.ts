@@ -3,7 +3,9 @@
 import { Glob } from "bun";
 import { Logger } from "../utils/logger";
 import { sanitizeFile } from "../utils/sanitize";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 const glob = new Glob("books/**/*html");
 const files = Array.from(glob.scanSync(".")) as string[];
 

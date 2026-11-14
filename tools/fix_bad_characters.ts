@@ -2,10 +2,12 @@
 // Description: Fix bad/unwanted characters in translated Thai HTML files (auto-scans all Thai files)
 import { execSync } from "child_process";
 import { rmSync, writeFileSync } from "fs";
-import { appConfig } from "../config";
+import { join, resolve } from "path";
+import { appConfig, appRoot } from "../config";
 import { scanAllFilesForBadChars } from "../utils/fix_bad_characters";
-import { ensureTempDir } from "../utils/temp";
+import { useActiveTitle } from "../utils/title";
 
+useActiveTitle();
 while (true) {
   const results = scanAllFilesForBadChars();
 
@@ -26,14 +28,14 @@ while (true) {
         ...issue.mixedScriptPairs.map((p) => `mixed "${p}"`),
       ].join(", ");
       tableRows.push(
-        `| ${result.file} | ${issue.line} | ${chars} | \`${issue.originalLine}\` |`,
+        `| ${resolve(result.file)} | ${issue.line} | ${chars} | \`${issue.originalLine}\` |`,
       );
     }
   }
 
-  ensureTempDir();
+  const instructionPath = join(appRoot, ".temp/INSTRUCTION.md");
   writeFileSync(
-    ".temp/INSTRUCTION.md",
+    instructionPath,
     `# Agent Task: Fix Bad Characters in Thai HTML
 
 ## Mode
@@ -93,11 +95,12 @@ ${tableRows.join("\n")}
   execSync(
     `opencode run "Fix bad characters in Thai HTML files" --auto --model ${appConfig.model.opencode} --agent bad-character-fixer`,
     {
+      cwd: appRoot,
       stdio: "inherit",
       timeout: 1000 * 60 * 10,
       killSignal: "SIGKILL",
     },
   );
 
-  rmSync(".temp/INSTRUCTION.md");
+  rmSync(instructionPath, { force: true });
 }

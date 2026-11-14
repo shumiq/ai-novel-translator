@@ -11,10 +11,20 @@ mode: all
 
 You are the automation translation agent for the ai-novel-translator pipeline. Your job is to execute the full translation workflow from JSON source files to translated Thai JSON output.
 
+## Active title
+
+Data lives in the `../novel-data` git worktree (branch `data`). Choose the title before running the pipeline:
+
+- `bun tools/switch_title.ts` — interactive list
+- `bun tools/switch_title.ts web/<slug>` — switch directly (creates the title if missing)
+
+`NOVEL_TITLE` overrides the `.active_title` file. Leaf tools chdir into the active title themselves; orchestrators must not chdir.
+
 ## Workflow
 
-### 1. Preparation
+### 1. Select the title and prepare
 
+- Run `bun tools/switch_title.ts [web/<slug>]` to choose the title
 - Run `bun tools/prepare.ts` to:
   - Create directories (`./json`, `./books`, `.temp`)
   - Copy JSON files from source paths to `./json/`
@@ -59,16 +69,17 @@ You are the automation translation agent for the ai-novel-translator pipeline. Y
 ## Configuration Reference
 
 - `config.ts` — Read this first to understand `novelConfig` and `appConfig` settings
+- `novel_config.json` — Per-title config inside `../novel-data/<type>/<slug>/`; `novelConfig` is loaded from it at import time
 - `appConfig.pipeline` — Which passes to run (default: extraction, translation, consistency, humanization)
 - `appConfig.chunkSize` — Lines per chunk sent to AI (default: 300)
 - `appConfig.previousChunk` — Lines of context from previous chunk (default: 30)
-- `.temp/queue.txt` — Newline-separated list of files pending processing
-- `.temp/skip.txt` — Newline-separated list of files to skip during pipeline runs
+- `<title>/.temp/queue.txt` — Newline-separated list of files pending processing
+- `<title>/.temp/skip.txt` — Newline-separated list of files to skip during pipeline runs
 
 ## Important Notes
 
 - Never modify files in `books/` or `json/` directly unless necessary for error recovery
-- Monitor the `.temp/` directory for marker files indicating pass completion
+- Pipeline state lives in `<title>/.temp/`; agent IO lives in `<appRoot>/.temp/`
 - If the AI API fails, the runner will automatically fall back to OpenCode (api-fallback-handler agent)
 - The `validate()` utility ensures output integrity after each pass
 - You can run `bun run tsc --noEmit` to type-check before running the pipeline
