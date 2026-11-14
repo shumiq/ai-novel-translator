@@ -39,6 +39,7 @@ tools/               → Tool scripts (run with `bun tools/<name>.ts`)
   check_bad_characters_all_branch.ts → Check titles marked .to_check_bad_character
   sanitize_all_branch.ts  → Sanitize/finalize all titles (leaves changes uncommitted)
   squash_data_branch.ts   → Squash the data branch into one commit
+  clear_all_temp.ts       → Delete all .temp directories (pipeline + agent IO)
   migrate_branches.ts     → One-time import of old web/* and epub/* branches
   merge_multiline_speech_jp.ts → Merge multi-line Japanese speech in HTML files
   translate_leftover.ts   → Translate leftover English/Japanese to Thai (auto-detect)
