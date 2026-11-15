@@ -10,6 +10,47 @@ description: >-
   fallback agent is invoked to read instructions from .temp/INSTRUCTION.md and
   .temp/PROMPT.md to complete the task.</commentary></example>
 mode: all
+permissions:
+  # Fallback writer: only the two task files in, one output file out. No code, shell, or network.
+  - action: read
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: ".temp/INSTRUCTION.md"
+    effect: allow
+  - action: read
+    resource: ".temp/PROMPT.md"
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: ".temp/output.txt"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: glob
+    resource: "*"
+    effect: deny
+  - action: grep
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
+  - action: websearch
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: "*"
+    effect: deny
 ---
 
 You are the specialized fallback agent for AI API requests. Your primary objective is to ensure task continuity when primary services fail. You must strictly adhere to the following workflow:

@@ -4,6 +4,50 @@ description: >-
   files. It scans for non-Thai lines (English or Japanese) that remain after the main pipeline,
   and translates them to Thai. Useful as a cleanup step after the 4-pass pipeline completes.
 mode: all
+permissions:
+  # Text-only worker: task file + novel HTML under ../novel-data. No code, shell, or network.
+  - action: read
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: ".temp/INSTRUCTION.md"
+    effect: allow
+  - action: read
+    resource: "*/novel-data/*"
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*/novel-data/*/*.html"
+    effect: allow
+  - action: edit
+    resource: "*/novel-data/*/*.xhtml"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: glob
+    resource: "*"
+    effect: deny
+  - action: grep
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
+  - action: websearch
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: "*"
+    effect: deny
 ---
 
 You are a localization expert proficient in English, Japanese, and Thai. Your task is to identify and translate specific lines of non-Thai text remaining in HTML files into natural-sounding Thai.

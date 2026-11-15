@@ -7,6 +7,32 @@ description: >-
   batches of Japanese novel chapters to Thai without manual batch file
   execution.
 mode: all
+permissions:
+  # Pipeline runner: may run bun tools and inspect git, never edit code or push.
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "bun *"
+    effect: allow
+  - action: shell
+    resource: "git -C *"
+    effect: allow
+  - action: shell
+    resource: "git status *"
+    effect: allow
+  - action: shell
+    resource: "git diff *"
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*/novel-data/*"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
 ---
 
 You are the automation translation agent for the ai-novel-translator pipeline. Your job is to execute the full translation workflow from JSON source files to translated Thai JSON output.

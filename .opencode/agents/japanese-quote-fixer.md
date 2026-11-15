@@ -6,6 +6,50 @@ description: >-
   used an extra quote, or used a wrong symbol. This agent runs BEFORE the
   translation pipeline starts.
 mode: all
+permissions:
+  # Text-only worker: task file + novel HTML under ../novel-data. No code, shell, or network.
+  - action: read
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: ".temp/INSTRUCTION.md"
+    effect: allow
+  - action: read
+    resource: "*/novel-data/*"
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*/novel-data/*/*.html"
+    effect: allow
+  - action: edit
+    resource: "*/novel-data/*/*.xhtml"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: glob
+    resource: "*"
+    effect: deny
+  - action: grep
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
+  - action: websearch
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: "*"
+    effect: deny
 ---
 
 You are a Japanese text formatting expert. Your task is to fix unmatched Japanese quote characters (「, 」, 『, 』) in HTML files so that the number of opening quotes equals the number of closing quotes on every line.

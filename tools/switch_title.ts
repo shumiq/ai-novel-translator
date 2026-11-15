@@ -13,34 +13,14 @@ function writeActiveTitle(id: string): void {
   writeFileSync(join(appRoot, ".active_title"), `${id}\n`);
 }
 
-async function createTitle(id: string): Promise<void> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const ask = async (question: string, fallback = ""): Promise<string> => {
-    const answer = await rl.question(
-      `${question}${fallback ? ` [${fallback}]` : ""}: `,
-    );
-    return answer.trim() || fallback;
-  };
-
-  const originalPath = await ask("Original source path (empty for EPUB)");
-  const outputPath = await ask("Output JSON path (empty for EPUB)");
-  const dictionaryPath = await ask("Dictionary path (empty for none)");
-  const title = await ask("Title");
-  const originalLanguage = await ask("Original language", "Japanese");
-  const additionalContext = await ask(
-    "Additional context (comma separated, optional)",
-  );
-  rl.close();
-
+function createTitle(id: string): void {
   const config: NovelConfig = {
-    originalPath,
-    outputPath,
-    dictionaryPath,
-    title,
-    originalLanguage,
-    additionalContext: additionalContext
-      ? additionalContext.split(",").map((s) => s.trim())
-      : [],
+    originalPath: "",
+    outputPath: "",
+    dictionaryPath: "",
+    title: "",
+    originalLanguage: "Japanese",
+    additionalContext: [],
   };
 
   const dir = titleDir(id);
@@ -64,7 +44,7 @@ async function main(): Promise<void> {
       throw new Error(`Invalid title id: ${JSON.stringify(arg)}`);
     }
     if (!existsSync(join(titleDir(arg), "novel_config.json"))) {
-      await createTitle(arg);
+      createTitle(arg);
     }
     writeActiveTitle(arg);
     Logger.done(`Active title: ${arg}`);
@@ -94,7 +74,7 @@ async function main(): Promise<void> {
     throw new Error(`Invalid title id: ${JSON.stringify(answer)}`);
   }
   if (!existsSync(join(titleDir(id), "novel_config.json"))) {
-    await createTitle(id);
+    createTitle(id);
   }
   writeActiveTitle(id);
   Logger.done(`Active title: ${id}`);

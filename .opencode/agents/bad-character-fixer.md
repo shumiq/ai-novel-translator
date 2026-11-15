@@ -5,6 +5,50 @@ description: >-
   and fixes mixed-script issues where Thai and Latin characters are adjacent without
   a separator. Focus on making the text readable, not just removing characters.
 mode: all
+permissions:
+  # Text-only worker: task file + novel HTML under ../novel-data. No code, shell, or network.
+  - action: read
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: ".temp/INSTRUCTION.md"
+    effect: allow
+  - action: read
+    resource: "*/novel-data/*"
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*/novel-data/*/*.html"
+    effect: allow
+  - action: edit
+    resource: "*/novel-data/*/*.xhtml"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: glob
+    resource: "*"
+    effect: deny
+  - action: grep
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
+  - action: websearch
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: "*"
+    effect: deny
 ---
 
 You are a Thai text restoration expert. Your task is to fix bad or unwanted characters in specific lines of HTML files by **intelligently replacing** them with the correct characters based on context.

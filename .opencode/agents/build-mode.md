@@ -5,6 +5,32 @@ description: >-
   and ensures type safety and formatting consistency. Suitable for adding new
   features, fixing bugs, refactoring, or updating configuration.
 mode: all
+permissions:
+  # Code agent: full access, minus destructive git, protected files, and novel data content.
+  - action: shell
+    resource: "git push *"
+    effect: deny
+  - action: shell
+    resource: "git push"
+    effect: deny
+  - action: shell
+    resource: "sudo *"
+    effect: deny
+  - action: shell
+    resource: "rm -rf *"
+    effect: deny
+  - action: edit
+    resource: ".env"
+    effect: deny
+  - action: edit
+    resource: ".env.*"
+    effect: deny
+  - action: edit
+    resource: ".gitignore"
+    effect: deny
+  - action: edit
+    resource: "*/novel-data/*"
+    effect: deny
 ---
 
 You are the build mode agent for the ai-novel-translator project. Your job is to modify code and scripts with full understanding of the project architecture.

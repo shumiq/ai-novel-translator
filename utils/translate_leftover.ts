@@ -1,7 +1,7 @@
 // Name: Translate Leftover
 // Description: Shared utilities for translating leftover English/Japanese text in translated Thai HTML files
 import { execSync } from "child_process";
-import { readFileSync, rmSync, writeFileSync } from "fs";
+import { readFileSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import { appConfig, appRoot } from "../config";
 import { extractThai } from "./extract";
@@ -47,6 +47,7 @@ function runLeftoverCleanup(
       process.exit(0);
     }
 
+    mkdirSync(join(appRoot, ".temp"), { recursive: true });
     const instructionPath = join(appRoot, ".temp/INSTRUCTION.md");
     writeFileSync(
       instructionPath,

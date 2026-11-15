@@ -2,7 +2,7 @@
 // Description: Merge multi-line Japanese speech segments in HTML files before translation
 import { execSync } from "child_process";
 import { Glob } from "bun";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import { isThai } from "../utils/lang";
 import { Logger } from "../utils/logger";
@@ -87,6 +87,7 @@ while (true) {
     }
   }
 
+  mkdirSync(join(appRoot, ".temp"), { recursive: true });
   const instructionPath = join(appRoot, ".temp/INSTRUCTION.md");
   writeFileSync(
     instructionPath,

@@ -1,7 +1,7 @@
 // Name: Fix Bad Characters
 // Description: Fix bad/unwanted characters in translated Thai HTML files (auto-scans all Thai files)
 import { execSync } from "child_process";
-import { rmSync, writeFileSync } from "fs";
+import { mkdirSync, rmSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import { appConfig, appRoot } from "../config";
 import { scanAllFilesForBadChars } from "../utils/fix_bad_characters";
@@ -33,6 +33,7 @@ while (true) {
     }
   }
 
+  mkdirSync(join(appRoot, ".temp"), { recursive: true });
   const instructionPath = join(appRoot, ".temp/INSTRUCTION.md");
   writeFileSync(
     instructionPath,
