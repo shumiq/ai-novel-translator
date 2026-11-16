@@ -73,11 +73,14 @@ export function validate(
       }
     }
 
+    const beforeLineQuotes = beforeLine.split(`"`).length + beforeLine.split(`'`).length - 2
+    const afterLineQuotes = afterLine.split(`"`).length + afterLine.split(`'`).length - 2
+
     if (
-      beforeLine.split(`"`).length !== afterLine.split(`"`).length &&
+      beforeLineQuotes !== afterLineQuotes &&
       appConfig.validation.quoteCount
     ) {
-      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${beforeLine.split(`"`).length - 1}, translated has ${afterLine.split(`"`).length - 1}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
+      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${beforeLineQuotes}, translated has ${afterLineQuotes}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
       Logger.error(msg);
       return msg;
     }
