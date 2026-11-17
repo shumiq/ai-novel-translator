@@ -54,6 +54,8 @@ export const sanitize = (
                   .replaceAll("』", '"')
                   .replaceAll("〝", '"')
                   .replaceAll("〟", '"')
+                  .replaceAll("❝", `"`)
+                  .replaceAll("❞", `"`)
                   .replaceAll("\u201C", '"')
                   .replaceAll("\u201D", '"')
                   .replaceAll("\u2018", "'")
