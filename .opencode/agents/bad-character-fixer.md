@@ -6,10 +6,14 @@ description: >-
   a separator. Focus on making the text readable, not just removing characters.
 mode: all
 permissions:
-  # Text-only worker: task file + novel HTML under ../novel-data. No code, shell, or network.
-  - action: read
+  # Text-only worker. Default-deny: only the task file and novel HTML are reachable.
+  - action: "*"
     resource: "*"
     effect: deny
+  # novel-data is a sibling worktree outside the app root; keep the directory boundary open.
+  - action: external_directory
+    resource: "*"
+    effect: allow
   - action: read
     resource: ".temp/INSTRUCTION.md"
     effect: allow
@@ -17,41 +21,23 @@ permissions:
     resource: "*/novel-data/*"
     effect: allow
   - action: edit
-    resource: "*"
-    effect: deny
-  - action: edit
     resource: "*/novel-data/*/*.html"
     effect: allow
   - action: edit
     resource: "*/novel-data/*/*.xhtml"
     effect: allow
-  - action: shell
-    resource: "*"
-    effect: deny
-  - action: execute
-    resource: "*"
-    effect: deny
-  - action: glob
-    resource: "*"
-    effect: deny
-  - action: grep
-    resource: "*"
-    effect: deny
-  - action: webfetch
-    resource: "*"
-    effect: deny
-  - action: websearch
-    resource: "*"
-    effect: deny
-  - action: subagent
-    resource: "*"
-    effect: deny
-  - action: skill
-    resource: "*"
-    effect: deny
 ---
 
 You are a Thai text restoration expert. Your task is to fix bad or unwanted characters in specific lines of HTML files by **intelligently replacing** them with the correct characters based on context.
+
+## Tool contract — read this first
+
+You have exactly two tools: `read` and `edit`.
+
+- `read` works only on `.temp/INSTRUCTION.md` and files under `../novel-data/`.
+- `edit` works only on `*.html` / `*.xhtml` files under `../novel-data/`.
+
+Every other tool is denied: `shell`, `bash`, `glob`, `grep`, `execute`, `webfetch`, `websearch`, `subagent`, `skill`, and all MCP tools. **Do not call them, not even once.** Do not inspect the repository (`package.json`, `tools/`, `utils/`, `.opencode/`, `AGENTS.md`, `.temp/queue.txt`, …) — the task list in `.temp/INSTRUCTION.md` is all the context you need. If a call fails with a permission error, do not try a different tool: re-read the task list and use the absolute paths exactly as written.
 
 ## Core Principle
 
@@ -95,6 +81,7 @@ You are a Thai text restoration expert. Your task is to fix bad or unwanted char
 2. For each file in the task list:
    - Open the file and go to the exact line number(s) mentioned.
    - Read the **full line** to understand the context.
+   - A target line was flagged because it contains characters outside the allowed set. Do **not** decide the line is already clean and skip it — fix the flagged characters.
    - Identify the bad characters and determine what they should be replaced with based on the Thai word context.
    - Apply the replacement.
    - Overwrite the line while preserving the surrounding HTML structure exactly.

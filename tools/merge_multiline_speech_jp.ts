@@ -94,7 +94,7 @@ while (true) {
     `# Agent Task: Fix Unmatched Japanese Quote Characters
 
 ## Mode
-This task should be handled by the **japanese-quote-fixer** agent (see \`.opencode/agents/japanese-quote-fixer.md\`).
+Handled by the **japanese-quote-fixer** agent. You have only the read and edit tools; every other tool is denied. Do not inspect the repository — the task list below is all the context you need.
 
 ## Role
 You are a Japanese text formatting expert. Your task is to fix unmatched Japanese quote characters (\`「\`, \`」\`, \`『\`, \`』\`) in HTML files.
@@ -105,6 +105,7 @@ Directly edit the specified files and lines so that the number of opening quotes
 ## Constraints
 - **No Code Generation:** Do not write Python, Bash, or any other scripts to perform the task. Edit the files directly.
 - **Precision:** Only modify the specific line numbers provided. Do not change other lines.
+- **Flagged line:** The target line was flagged because its quote count is unbalanced. Do not skip it as already balanced — fix the imbalance.
 - **Integrity:** Ensure HTML tags (e.g., \`<p>\`, \`<a>\`, \`<span>\`) are preserved exactly as they are; only fix the quote characters.
 
 ## Execution Steps

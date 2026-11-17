@@ -8,10 +8,36 @@ description: >-
   execution.
 mode: all
 permissions:
-  # Pipeline runner: may run bun tools and inspect git, never edit code or push.
-  - action: shell
+  # Pipeline runner: read the repo, edit only novel data, shell limited to bun and git inspection.
+  - action: "*"
     resource: "*"
     effect: deny
+  # novel-data is a sibling worktree outside the app root; keep the directory boundary open.
+  - action: external_directory
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*"
+    effect: allow
+  # Never let a read allow rule expose credentials.
+  - action: read
+    resource: "*.env"
+    effect: deny
+  - action: read
+    resource: "*.env.*"
+    effect: deny
+  - action: glob
+    resource: "*"
+    effect: allow
+  - action: grep
+    resource: "*"
+    effect: allow
+  - action: edit
+    resource: "*/novel-data/*"
+    effect: allow
+  - action: question
+    resource: "*"
+    effect: allow
   - action: shell
     resource: "bun *"
     effect: allow
@@ -24,18 +50,13 @@ permissions:
   - action: shell
     resource: "git diff *"
     effect: allow
-  - action: edit
-    resource: "*"
-    effect: deny
-  - action: edit
-    resource: "*/novel-data/*"
-    effect: allow
-  - action: subagent
-    resource: "*"
-    effect: deny
 ---
 
 You are the automation translation agent for the ai-novel-translator pipeline. Your job is to execute the full translation workflow from JSON source files to translated Thai JSON output.
+
+## Tool contract — read this first
+
+You may read the repository, run `bun ...` and `git` inspection commands (`git -C ...`, `git status ...`, `git diff ...`), and edit files under `../novel-data/`. Every other tool is denied: other shell commands (`ls`, `cat`, `echo`, `rm`, …), Code Mode/`execute`, MCP tools, web tools, subagents, and skills. **Do not probe with harmless commands** — if a command is denied, use an allowed `bun`/`git` command or the `read` tool instead.
 
 ## Active title
 

@@ -31,6 +31,7 @@ function runLeftoverCleanup(
   instructionHeader: string,
   qualityChecklist: string,
 ) {
+  let previous = "";
   while (true) {
     const files = extractThai();
     const toBeTranslated: string[] = [];
@@ -46,6 +47,17 @@ function runLeftoverCleanup(
       Logger.info(`No leftover ${language} text found.`);
       process.exit(0);
     }
+
+    // The agent runs once per batch; if a full scan looks identical, it made no
+    // edit and re-spawning it would just repeat the same denied-tool loop.
+    const signature = toBeTranslated.join("\n");
+    if (signature === previous) {
+      Logger.warn(
+        `No progress on leftover ${language} text after a translation run; stopping to avoid an endless loop.`,
+      );
+      process.exit(0);
+    }
+    previous = signature;
 
     mkdirSync(join(appRoot, ".temp"), { recursive: true });
     const instructionPath = join(appRoot, ".temp/INSTRUCTION.md");
@@ -79,7 +91,7 @@ export function translateLeftoverEnglish() {
     `# Agent Task: English to Thai Translation (Leftover Cleanup)
 
 ## Mode
-This task should be handled by the **leftover-translator** agent (see \`.opencode/agents/leftover-translator.md\`).
+Handled by the **leftover-translator** agent. You have only the read and edit tools; every other tool is denied. Do not inspect the repository — the task list below is all the context you need.
 
 ## Role
 You are a localization expert proficient in English and Thai. Your task is to identify and translate specific lines of English text remaining in HTML files into natural-sounding Thai.
@@ -91,6 +103,7 @@ Directly edit the specified files and lines. Replace the English text with its T
 - **No Code Generation:** Do not write Python, Bash, or any other scripts to perform the task. Edit the files directly.
 - **One File at a Time:** Process the task list sequentially. Read one file, translate its lines, save it, then move to the next file. Do NOT open or read multiple files simultaneously.
 - **Precision:** Only modify the specific line numbers provided. Do not change other lines.
+- **Leftover fragments:** A target line may be mostly Thai with a few leftover English/Japanese characters. Translate/transliterate those characters — do not skip the line as "already Thai".
 - **Integrity:** Ensure HTML tags (e.g., \`<p>\`, \`<a>\`, \`<span>\`) are preserved exactly as they are; only translate the text content inside or between them.
 
 ## Execution Steps
@@ -119,7 +132,7 @@ export function translateLeftoverJapanese() {
     `# Agent Task: Japanese to Thai Translation (Leftover Cleanup)
 
 ## Mode
-This task should be handled by the **leftover-translator** agent (see \`.opencode/agents/leftover-translator.md\`).
+Handled by the **leftover-translator** agent. You have only the read and edit tools; every other tool is denied. Do not inspect the repository — the task list below is all the context you need.
 
 ## Role
 You are a localization expert proficient in Japanese and Thai. Your task is to identify and translate specific lines of Japanese text remaining in HTML files into natural-sounding Thai.
@@ -131,6 +144,7 @@ Directly edit the specified files and lines. Replace the Japanese text with its 
 - **No Code Generation:** Do not write Python, Bash, or any other scripts to perform the task. Edit the files directly.
 - **One File at a Time:** Process the task list sequentially. Read one file, translate its lines, save it, then move to the next file. Do NOT open or read multiple files simultaneously.
 - **Precision:** Only modify the specific line numbers provided. Do not change other lines.
+- **Leftover fragments:** A target line may be mostly Thai with a few leftover English/Japanese characters. Translate/transliterate those characters — do not skip the line as "already Thai".
 - **Integrity:** Ensure HTML tags (e.g., \`<p>\`, \`<a>\`, \`<span>\`) are preserved exactly as they are; only translate the text content inside or between them.
 
 ## Execution Steps

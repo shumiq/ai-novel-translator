@@ -40,7 +40,7 @@ while (true) {
     `# Agent Task: Fix Bad Characters in Thai HTML
 
 ## Mode
-This task should be handled by the **bad-character-fixer** agent (see \`.opencode/agents/bad-character-fixer.md\`).
+Handled by the **bad-character-fixer** agent. You have only the read and edit tools; every other tool is denied. Do not inspect the repository — the task list below is all the context you need.
 
 ## Role
 You are a Thai text restoration expert. Your task is to fix bad or unwanted characters in specific lines of HTML files by **intelligently replacing** them with the correct characters based on context.
@@ -70,6 +70,7 @@ You are a Thai text restoration expert. Your task is to fix bad or unwanted char
 - **No Code Generation:** Do not write Python, Bash, or any other scripts to perform the task. Edit the files directly.
 - **One File at a Time:** Process the task list sequentially. Read one file, fix its lines, save it, then move to the next file. Do NOT open or read multiple files simultaneously.
 - **Precision:** Only modify the specific line numbers provided. Do not change other lines.
+- **Flagged line:** The target line was flagged because it contains characters outside the allowed set. Do not skip it as already clean — fix the flagged characters.
 - **Integrity:** Ensure HTML tags (e.g., \`<p>\`, \`<a>\`, \`<span>\`) are preserved exactly as they are; only modify the text content.
 - **Readable output:** The fixed text must read naturally in Thai. If unsure about a replacement, prefer the most common/likely character for that context.
 
