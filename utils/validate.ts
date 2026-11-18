@@ -12,6 +12,28 @@ export function isAlphabet(c: string): boolean {
   );
 }
 
+function isWordChar(ch: string): boolean {
+  return /[\p{L}\p{N}]/u.test(ch);
+}
+
+// Count `"` and `'` as quotes, but ignore in-word apostrophes ("昼's", "don't"):
+// a real quote sits next to a space/punctuation/tag, an apostrophe has word chars on both sides.
+// shortcut: a leading apostrophe before digits ("'80s") is still counted; harmless edge, upgrade if it bites.
+function countQuotes(line: string): number {
+  let count = 0;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      count++;
+    } else if (ch === "'") {
+      const prev = line[i - 1] ?? "";
+      const next = line[i + 1] ?? "";
+      if (!(isWordChar(prev) && isWordChar(next))) count++;
+    }
+  }
+  return count;
+}
+
 export function validate(
   before: string,
   after: string,
@@ -73,8 +95,8 @@ export function validate(
       }
     }
 
-    const beforeLineQuotes = beforeLine.split(`"`).length + beforeLine.split(`'`).length - 2
-    const afterLineQuotes = afterLine.split(`"`).length + afterLine.split(`'`).length - 2
+    const beforeLineQuotes = countQuotes(beforeLine);
+    const afterLineQuotes = countQuotes(afterLine);
 
     if (
       beforeLineQuotes !== afterLineQuotes &&
