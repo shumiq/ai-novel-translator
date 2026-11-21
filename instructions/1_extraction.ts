@@ -1,4 +1,3 @@
-import { execSync } from "child_process";
 import {
   appendFileSync,
   existsSync,
@@ -13,12 +12,16 @@ import {
   HighDemandError,
   ProhibitedContentError,
 } from "../utils/ai";
-import { extractExistedWords } from "../utils/dictionary";
+import {
+  extractExistedWords,
+  readDictionary,
+  stageDictionary,
+  writeDictionary,
+} from "../utils/dictionary";
 import { getPreviousChapterContent } from "../utils/extract";
 import { isJapanese } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
-import type { Dictonary } from "../utils/types";
 
 export async function extraction(file: string) {
   if (!existsSync(".temp")) mkdirSync(".temp");
@@ -208,10 +211,7 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
     }
   }
 
-  let currentData: Dictonary = {};
-  try {
-    currentData = JSON.parse(readFileSync("novel_data.json", "utf-8"));
-  } catch {}
+  const currentData = readDictionary();
 
   let hasEmptyTranslations = false;
 
@@ -266,9 +266,8 @@ ${novelConfig.additionalContext.map((ctx) => `- ${ctx}`).join("\n")}
     Logger.debug(`  └─ some terms had empty translations after filtering.`);
   }
 
-  writeFileSync("novel_data.json", JSON.stringify(currentData, null, 2));
-
-  execSync(`git add novel_data.json`);
+  writeDictionary(currentData);
+  stageDictionary();
 
   writeFileSync(
     `.temp/extraction_${file.replaceAll("/", "_")}`,

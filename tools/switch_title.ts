@@ -26,8 +26,6 @@ function createTitle(id: string): void {
   const dir = titleDir(id);
   mkdirSync(join(dir, "books"), { recursive: true });
   mkdirSync(join(dir, "json"), { recursive: true });
-  const dictionary = join(dir, "novel_data.json");
-  if (!existsSync(dictionary)) writeFileSync(dictionary, "{}\n");
   writeFileSync(
     join(dir, "novel_config.json"),
     JSON.stringify(config, null, 2) + "\n",

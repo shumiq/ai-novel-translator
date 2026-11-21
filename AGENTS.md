@@ -27,7 +27,7 @@ Do not run `bun tools/runner.ts` as a smoke test — it makes paid AI calls and 
 ## Titles and the data worktree
 
 - All novel data lives in the `../novel-data` worktree, branch `data`. The code repo stays on `main`; there are **no per-title branches** (the `*_branch` tool names are historical — they operate on the whole data worktree).
-- Each title is `web/<slug>/` or `epub/<slug>/` holding `books/`, `json/`, `novel_data.json` (the dictionary), and `novel_config.json` (which points at `originalPath` / `outputPath` / `dictionaryPath`).
+- Each title is `web/<slug>/` or `epub/<slug>/` holding `books/`, `json/`, and `novel_config.json` (which points at `originalPath` / `outputPath` / `dictionaryPath`). The dictionary itself lives at `dictionaryPath`.
 - The active title is `NOVEL_TITLE` (wins) or `.active_title` at the code repo root.
 - `utils/title.ts` owns `listTitles()`, `titleDir()`, `useActiveTitle()`, `forEachTitle()`. **Leaf tools call `useActiveTitle()`, which `process.chdir()`es into the title folder.** Orchestrators must not chdir: spawn children with `cwd: appRoot` and `NOVEL_TITLE=<id>`.
 - `novel_config.json` paths are stored relative to the **code repo root**; `config.ts` resolves them against `appRoot` at import time.
@@ -39,12 +39,12 @@ Do not run `bun tools/runner.ts` as a smoke test — it makes paid AI calls and 
 
 `runner_api.ts` orchestrates four passes; each pass writes a temp artifact and is skipped if that artifact already exists, so a crashed run resumes per-file.
 
-| Pass         | File                             | Reads                                | Writes                                       |
-| ------------ | -------------------------------- | ------------------------------------ | -------------------------------------------- |
-| extraction   | `instructions/1_extraction.ts`   | `books/<file>.html`                  | `novel_data.json`, `.temp/extraction_<file>` |
-| translation  | `instructions/2_translation.ts`  | original HTML                        | `.temp/translated_<file>`                    |
-| consistency  | `instructions/3_consistency.ts`  | original + `.temp/translated_<file>` | `.temp/consistency_checked_<file>`           |
-| humanization | `instructions/4_humanization.ts` | `.temp/consistency_checked_<file>`   | `.temp/final_humanized_<file>`               |
+| Pass         | File                             | Reads                                | Writes                                      |
+| ------------ | -------------------------------- | ------------------------------------ | ------------------------------------------- |
+| extraction   | `instructions/1_extraction.ts`   | `books/<file>.html`                  | `dictionaryPath`, `.temp/extraction_<file>` |
+| translation  | `instructions/2_translation.ts`  | original HTML                        | `.temp/translated_<file>`                   |
+| consistency  | `instructions/3_consistency.ts`  | original + `.temp/translated_<file>` | `.temp/consistency_checked_<file>`          |
+| humanization | `instructions/4_humanization.ts` | `.temp/consistency_checked_<file>`   | `.temp/final_humanized_<file>`              |
 
 - `appConfig.pipeline` controls which passes run. With `extraction`/`translation` off, the queue is built from Thai files and `extractExistedWords(..., { searchByThai: true, genderOnly: true })` is used instead.
 - On success the runner copies the final artifact over `books/<file>.html`, deletes the temp artifacts, appends to `.temp/humanized.txt`, and `git add`s the file.
@@ -83,7 +83,7 @@ Do not run `bun tools/runner.ts` as a smoke test — it makes paid AI calls and 
 - The pipeline stages (`git add`) but never commits. Review with `git -C ../novel-data diff --cached`; commit manually, or `bun tools/squash_data_branch.ts` (add `--committed-only` to refuse a dirty tree).
 - `bun tools/sanitize_all_branch.ts` sanitizes + finalizes every title and leaves changes staged and uncommitted.
 - `bun tools/update_branches.ts` pulls new chapters into each title and marks it `.to_be_translated`; `bun tools/translate_new_chapters.ts` runs the full pipeline for marked titles (Japanese titles get `merge_multiline_speech_jp.ts` first) and marks them `.to_check_bad_character` on success.
-- `finalize.ts` copies the dictionary to `novelConfig.dictionaryPath` and, when `autoPushDictionasry` is on, `git add . && git commit --amend && git push -f` in that directory. That force-push is expected, but know it happens.
+- `finalize.ts` writes the dictionary directly to `novelConfig.dictionaryPath`, creating the file (and parent directories) if it does not exist. It no longer copies into a separate repo or force-pushes.
 
 ## Conventions
 

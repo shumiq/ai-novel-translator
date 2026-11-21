@@ -75,7 +75,6 @@ Data lives in the `../novel-data` git worktree (branch `data`). Choose the title
 - Run `bun tools/prepare.ts` to:
   - Create directories (`./json`, `./books`, `.temp`)
   - Copy JSON files from source paths to `./json/`
-  - Set up `novel_data.json` dictionary (copy from `dictionaryPath` or create empty)
   - Convert JSON chapters to HTML in `./books/`
   - Create `.temp/skip.txt` and `.temp/queue.txt` if missing
 

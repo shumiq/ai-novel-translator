@@ -3,7 +3,6 @@
 import { execSync } from "child_process";
 import {
   appendFileSync,
-  cpSync,
   existsSync,
   readFileSync,
   rmSync,
@@ -15,23 +14,22 @@ import {
   HighDemandError,
   ProhibitedContentError,
 } from "../utils/ai";
-import { extractExistedWords } from "../utils/dictionary";
+import {
+  extractExistedWords,
+  readDictionary,
+  stageDictionary,
+  writeDictionary,
+} from "../utils/dictionary";
 import { isJapanese } from "../utils/lang";
 import { Logger } from "../utils/logger";
 import { sanitize } from "../utils/sanitize";
 import { ensureTempDir } from "../utils/temp";
 import { useActiveTitle } from "../utils/title";
-import type { Dictonary } from "../utils/types";
 
 async function syncDatabase() {
   ensureTempDir();
 
-  let currentData: Dictonary = {};
-  try {
-    currentData = JSON.parse(readFileSync("novel_data.json", "utf-8"));
-  } catch {
-    Logger.info("novel_data.json not found or empty. Starting fresh.");
-  }
+  const currentData = readDictionary();
   Logger.info(
     `Loaded dictionary with ${Object.keys(currentData).length} existing entries.`,
   );
@@ -265,8 +263,8 @@ Instruction: Extract ONLY new or updated high-impact terms by comparing the orig
         continue;
       }
 
-      writeFileSync("novel_data.json", JSON.stringify(currentData, null, 2));
-      execSync("git add novel_data.json");
+      writeDictionary(currentData);
+      stageDictionary();
       writeFileSync(checkpoint, "done");
 
       if (existsSync(requestCache)) rmSync(requestCache);
@@ -286,8 +284,3 @@ Instruction: Extract ONLY new or updated high-impact terms by comparing the orig
 
 useActiveTitle();
 syncDatabase();
-
-if (novelConfig.dictionaryPath) {
-  cpSync("./novel_data.json", novelConfig.dictionaryPath);
-  Logger.info(`Copied: ./novel_data.json to ${novelConfig.dictionaryPath}`);
-}

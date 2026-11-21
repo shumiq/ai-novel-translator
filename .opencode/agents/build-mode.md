@@ -66,7 +66,6 @@ tools/               → Tool scripts (run with `bun tools/<name>.ts`)
   sanitize_all_branch.ts  → Sanitize/finalize all titles (leaves changes uncommitted)
   squash_data_branch.ts   → Squash the data branch into one commit
   clear_all_temp.ts       → Delete all .temp directories (pipeline + agent IO)
-  migrate_branches.ts     → One-time import of old web/* and epub/* branches
   merge_multiline_speech_jp.ts → Merge multi-line Japanese speech in HTML files
   translate_leftover.ts   → Translate leftover English/Japanese to Thai (auto-detect)
   sanitize_all.ts         → Sanitize all translated HTML files
@@ -113,4 +112,4 @@ utils/               → Shared utilities
 - Always preserve the 1:1 line correspondence in translation passes
 - When adding new instruction steps, follow the naming convention: `N_name.ts` in `instructions/`
 - When adding new utilities, add them to `utils/` and export typed functions
-- Keep the dictionary (`novel_data.json`) format consistent when modifying extraction
+- Keep the dictionary (`novelConfig.dictionaryPath`) format consistent when modifying extraction

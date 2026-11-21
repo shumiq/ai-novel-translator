@@ -59,10 +59,10 @@ async function main(): Promise<void> {
         env: { ...process.env, NOVEL_TITLE: id },
       });
 
-      const status = execSync(
-        "git status --porcelain -- books json novel_data.json",
-        { cwd: dir, encoding: "utf-8" },
-      );
+      const status = execSync("git status --porcelain -- books json", {
+        cwd: dir,
+        encoding: "utf-8",
+      });
       if (!status.trim()) {
         Logger.info(`  └─ ${id}: nothing to commit`);
         return;

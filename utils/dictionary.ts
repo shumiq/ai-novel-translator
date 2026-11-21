@@ -1,4 +1,7 @@
-import { readFileSync } from "fs";
+import { execFileSync } from "child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { dirname } from "path";
+import { novelConfig } from "../config";
 import { Logger } from "./logger";
 import type { Dictonary } from "./types";
 
@@ -7,10 +10,42 @@ export interface ExtractOptions {
   genderOnly?: boolean; // Only include entries that have a `gender` field
 }
 
+/** Absolute path of the active title's dictionary (novelConfig.dictionaryPath). */
+export function dictionaryPath(): string {
+  if (!novelConfig.dictionaryPath) {
+    throw new Error(
+      "novelConfig.dictionaryPath is not set. Add it to the title's novel_config.json.",
+    );
+  }
+  return novelConfig.dictionaryPath;
+}
+
+/** Read the dictionary from disk, returning {} when the file does not exist. */
+export function readDictionary(): Dictonary {
+  const path = dictionaryPath();
+  if (!existsSync(path)) return {};
+  return JSON.parse(readFileSync(path, "utf-8") || "{}") as Dictonary;
+}
+
+/** Write the dictionary to disk, creating parent directories if needed. */
+export function writeDictionary(data: Dictonary): void {
+  const path = dictionaryPath();
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(data, null, 2));
+}
+
+/** Stage the dictionary in its own repo (best-effort; never commits). */
+export function stageDictionary(): void {
+  const path = dictionaryPath();
+  try {
+    execFileSync("git", ["add", "--", path], { cwd: dirname(path) });
+  } catch (e) {
+    Logger.debug(`Could not stage dictionary: ${e}`);
+  }
+}
+
 export function extractExistedWords(content: string, options?: ExtractOptions) {
-  const dictionary = JSON.parse(
-    readFileSync("novel_data.json", "utf-8") || "{}",
-  ) as Dictonary;
+  const dictionary = readDictionary();
   const entries = Object.entries(dictionary);
   const contentLower = content.toLowerCase();
   const existedWords = entries.filter(([key, value]) => {

@@ -26,7 +26,6 @@ export const appConfig = {
   previousChunk: 30,
   chunkSize: 100,
   thinking: "high",
-  autoPushDictionasry: true,
   epub_seprarator: ["*", "※", "◇"],
   validation: {
     retriesLimit: 0,

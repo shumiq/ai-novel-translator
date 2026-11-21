@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { cp, readFile, readdir, writeFile } from "fs/promises";
 import { join } from "path";
 import { novelConfig } from "../config";
@@ -16,20 +16,6 @@ export async function preparation() {
     }
     if (!existsSync("./json")) mkdirSync("./json");
     if (!existsSync("./books")) mkdirSync("./books");
-    if (!existsSync("./novel_data.json")) {
-      if (
-        novelConfig.dictionaryPath &&
-        existsSync(novelConfig.dictionaryPath)
-      ) {
-        cpSync(novelConfig.dictionaryPath, "./novel_data.json");
-        Logger.info(`Copied: ${novelConfig.dictionaryPath} to novel_data.json`);
-      } else {
-        Logger.warn(
-          `The dictionary file ${novelConfig.dictionaryPath} does not exist. A new novel_data.json file will be created.`,
-        );
-        writeFileSync("./novel_data.json", "{}");
-      }
-    }
     if (!existsSync("./.temp")) mkdirSync("./.temp");
     if (!existsSync("./.temp/skip.txt")) writeFileSync("./.temp/skip.txt", "");
     if (!existsSync("./.temp/queue.txt"))
