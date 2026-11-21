@@ -35,9 +35,14 @@ function chapterSortFn(a: string, b: string) {
 
 export function getAllFiles(options?: { force?: boolean }) {
   if (existsSync(".temp/novel_files.json") && !options?.force) {
-    return JSON.parse(
+    const cached = JSON.parse(
       readFileSync(".temp/novel_files.json", "utf-8"),
     ) as string[];
+    // A stale cache (empty, or listing files a split/join already deleted) would
+    // silently return dead paths — rescan instead of trusting it.
+    if (cached.length > 0 && cached.every((file) => existsSync(file))) {
+      return cached;
+    }
   }
   const files = (Array.from(glob.scanSync(".")) as string[])
     .map((file) => file.replaceAll("\\", "/"))
