@@ -19,13 +19,14 @@ function isWordChar(ch: string): boolean {
 // Count `"` and `'` as quotes, but ignore in-word apostrophes ("昼's", "don't"):
 // a real quote sits next to a space/punctuation/tag, an apostrophe has word chars on both sides.
 // shortcut: a leading apostrophe before digits ("'80s") is still counted; harmless edge, upgrade if it bites.
-function countQuotes(line: string): number {
+// excludeApostrophes skips `'` entirely (used as a fallback comparison so A' vs A' never trips it).
+function countQuotes(line: string, excludeApostrophes = false): number {
   let count = 0;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') {
       count++;
-    } else if (ch === "'") {
+    } else if (ch === "'" && !excludeApostrophes) {
       const prev = line[i - 1] ?? "";
       const next = line[i + 1] ?? "";
       if (!(isWordChar(prev) && isWordChar(next))) count++;
@@ -95,16 +96,18 @@ export function validate(
       }
     }
 
-    const beforeLineQuotes = countQuotes(beforeLine);
-    const afterLineQuotes = countQuotes(afterLine);
-
-    if (
-      beforeLineQuotes !== afterLineQuotes &&
-      appConfig.validation.quoteCount
-    ) {
-      const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${beforeLineQuotes}, translated has ${afterLineQuotes}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
-      Logger.error(msg);
-      return msg;
+    if (appConfig.validation.quoteCount) {
+      const exactEqual = countQuotes(beforeLine) === countQuotes(afterLine);
+      // OR fallback: ignore apostrophes entirely (A' vs A' with a trailing space)
+      const equalIgnoringApostrophes =
+        countQuotes(beforeLine, true) === countQuotes(afterLine, true);
+      if (!exactEqual && !equalIgnoringApostrophes) {
+        const beforeCount = countQuotes(beforeLine);
+        const afterCount = countQuotes(afterLine);
+        const msg = `Bracket/quote count mismatch at line ${i + 1}${label}: original has ${beforeCount}, translated has ${afterCount}\n  Original: ${beforeLine}\n  Translated: ${afterLine}`;
+        Logger.error(msg);
+        return msg;
+      }
     }
 
     const countParens = (s: string) => (s.match(/[\(\)（）]/g) || []).length;
